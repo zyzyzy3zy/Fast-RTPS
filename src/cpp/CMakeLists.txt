@@ -132,6 +132,7 @@ set(${PROJECT_NAME}_source_files
     rtps/transport/test_UDPv4Transport.cpp
     rtps/transport/tcp/TCPControlMessage.cpp
     rtps/transport/tcp/RTCPMessageManager.cpp
+    rtps/transport/ChainingTransport.cpp
 
     dynamic-types/AnnotationDescriptor.cpp
     dynamic-types/AnnotationParameterValue.cpp
@@ -266,7 +267,6 @@ endif()
 
 # Add sources to Makefile.am
 set_sources(${${PROJECT_NAME}_source_files})
-
 
 # Security sources
 set(${PROJECT_NAME}_security_source_files
@@ -451,6 +451,8 @@ elseif(NOT EPROSIMA_INSTALLER)
         $<$<BOOL:${LINK_SSL}>:OpenSSL::SSL$<SEMICOLON>OpenSSL::Crypto>
         $<$<BOOL:${WIN32}>:iphlpapi$<SEMICOLON>Shlwapi>
         ${THIRDPARTY_BOOST_LINK_LIBS}
+        $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
+        $<$<BOOL:${BZIP2_FOUND}>:BZip2::BZip2>
         PRIVATE eProsima_atomic
         )
 
