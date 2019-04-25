@@ -2071,36 +2071,29 @@ BLACKBOXTEST(BlackBox, EndpointRediscovery_2)
     PubSubWriter<HelloWorldType> writer(TEST_TOPIC_NAME);
 
     auto testTransport = std::make_shared<test_UDPv4TransportDescriptor>();
-    reader.disable_builtin_transport();
-    reader.add_user_transport_to_pparams(testTransport);
 
     reader.lease_duration({ 120, 0 }, { 1, 0 }).reliability(eprosima::fastrtps::RELIABLE_RELIABILITY_QOS).init();
 
     ASSERT_TRUE(reader.isInitialized());
 
-    // To simulate lossy conditions, we are going to remove the default
-    // bultin transport, and instead use a lossy shim layer variant.
-    testTransport = std::make_shared<test_UDPv4TransportDescriptor>();
-    // We drop 20% of all data frags
     writer.disable_builtin_transport();
     writer.add_user_transport_to_pparams(testTransport);
 
-    writer.lease_duration({ 360, 0 }, { 2, 0 }).init();
+    writer.lease_duration({ 2, 0 }, { 1, 0 }).init();
 
     ASSERT_TRUE(writer.isInitialized());
 
-    // Because its volatile the durability
     // Wait for discovery.
     writer.wait_discovery();
     reader.wait_discovery();
 
     test_UDPv4Transport::test_UDPv4Transport_ShutdownAllNetwork = true;
 
-    writer.wait_reader_undiscovery();
+    reader.wait_participant_undiscovery();
 
     test_UDPv4Transport::test_UDPv4Transport_ShutdownAllNetwork = false;
 
-    writer.wait_discovery();
+    reader.wait_discovery();
 }
 
 // Used to detect Github issue #154
