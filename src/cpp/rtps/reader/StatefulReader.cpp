@@ -363,7 +363,10 @@ bool StatefulReader::processHeartbeatMsg(GUID_t &writerGUID, uint32_t hbCount, S
         if(pWP->m_lastHeartbeatCount < hbCount)
         {
             // If it is the first heartbeat message, we can try to cancel initial ack.
-            pWP->mp_initialAcknack->cancel_timer();
+            // TODO: This timer cancelling should be checked if needed with the liveliness implementation.
+            // To keep PARTICIPANT_DROPPED event we should add an explicit participant_liveliness QoS.
+            // This is now commented to avoid issues #457 and #155
+            // pWP->mp_initialAcknack->cancel_timer();
 
             pWP->m_lastHeartbeatCount = hbCount;
             pWP->lost_changes_update(firstSN);

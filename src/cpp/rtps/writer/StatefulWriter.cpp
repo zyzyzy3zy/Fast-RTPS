@@ -943,7 +943,7 @@ void StatefulWriter::send_heartbeat_nts_(const std::vector<GUID_t>& remote_reade
     logInfo(RTPS_WRITER, getGuid().entityId << " Sending Heartbeat (" << firstSeq << " - " << lastSeq <<")" );
 }
 
-void StatefulWriter::send_heartbeat_piggyback_nts_(const std::vector<GUID_t>& remote_readers, 
+void StatefulWriter::send_heartbeat_piggyback_nts_(const std::vector<GUID_t>& remote_readers,
     const LocatorList_t &locators,
     RTPSMessageGroup& message_group)
 {
@@ -984,10 +984,10 @@ void StatefulWriter::process_acknack(const GUID_t reader_guid, uint32_t ack_coun
             if(remote_reader->m_lastAcknackCount < ack_count)
             {
                 remote_reader->m_lastAcknackCount = ack_count;
+                // Sequence numbers before Base are set as Acknowledged.
+                remote_reader->acked_changes_set(sn_set.base);
                 if(sn_set.base > SequenceNumber_t(0, 0))
                 {
-                    // Sequence numbers before Base are set as Acknowledged.
-                    remote_reader->acked_changes_set(sn_set.base);
                     std::vector<SequenceNumber_t> set_vec = sn_set.get_set();
                     if (remote_reader->requested_changes_set(set_vec) && nack_response_event_ != nullptr)
                     {
