@@ -15,6 +15,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using ::testing::NiceMock;
+
 #define TEST_FRIENDS \
     FRIEND_TEST(WriterProxyTests, MissingChangesUpdateRefact); \
     FRIEND_TEST(WriterProxyTests, LostChangesUpdateRefact); \
@@ -36,7 +38,7 @@ namespace rtps {
 TEST( WriterProxyTests, MissingChangesUpdateRefact )
 {
     WriterProxyData wattr( 4u, 1u );
-    StatefulReader readerMock;
+    NiceMock<StatefulReader> readerMock;
     WriterProxy wproxy( &readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig() );
     EXPECT_CALL( *wproxy.initial_acknack_, update_interval( readerMock.getTimes().initialAcknackDelay ) ).Times( 1u );
     EXPECT_CALL( *wproxy.heartbeat_response_, update_interval( readerMock.getTimes().heartbeatResponseDelay ) ).Times( 1u );
@@ -110,7 +112,7 @@ TEST( WriterProxyTests, MissingChangesUpdateRefact )
 TEST( WriterProxyTests, LostChangesUpdateRefact )
 {
     WriterProxyData wattr( 4u, 1u );
-    StatefulReader readerMock;
+    NiceMock<StatefulReader> readerMock;
     WriterProxy wproxy( &readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig() );
     EXPECT_CALL( *wproxy.initial_acknack_, update_interval( readerMock.getTimes().initialAcknackDelay ) ).Times( 1u );
     EXPECT_CALL( *wproxy.heartbeat_response_, update_interval( readerMock.getTimes().heartbeatResponseDelay ) ).Times( 1u );
@@ -162,7 +164,7 @@ TEST( WriterProxyTests, LostChangesUpdateRefact )
 TEST( WriterProxyTests, ReceivedChangeSetRefact )
 {
     WriterProxyData wattr( 4u, 1u );
-    StatefulReader readerMock;
+    NiceMock<StatefulReader> readerMock;
     WriterProxy wproxy( &readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig() );
     EXPECT_CALL( *wproxy.initial_acknack_, update_interval( readerMock.getTimes().initialAcknackDelay ) ).Times( 1u );
     EXPECT_CALL( *wproxy.heartbeat_response_, update_interval( readerMock.getTimes().heartbeatResponseDelay ) ).Times( 1u );
@@ -248,7 +250,7 @@ TEST( WriterProxyTests, ReceivedChangeSetRefact )
 TEST( WriterProxyTests, IrrelevantChangeSetRefact )
 {
     WriterProxyData wattr( 4u, 1u );
-    StatefulReader readerMock;
+    NiceMock<StatefulReader> readerMock;
     WriterProxy wproxy( &readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig() );
     EXPECT_CALL( *wproxy.initial_acknack_, update_interval( readerMock.getTimes().initialAcknackDelay ) ).Times( 1u );
     EXPECT_CALL( *wproxy.heartbeat_response_, update_interval( readerMock.getTimes().heartbeatResponseDelay ) ).Times( 1u );
