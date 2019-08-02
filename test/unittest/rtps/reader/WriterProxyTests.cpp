@@ -27,8 +27,6 @@
 #include <fastrtps/rtps/builtin/data/WriterProxyData.h>
 #include <fastrtps/rtps/resources/TimedEvent.h>
 
-#include <rtps/reader/WriterProxy.cpp>
-
 namespace eprosima {
 namespace fastrtps {
 namespace rtps {
@@ -43,13 +41,17 @@ TEST(WriterProxyTests, MissingChangesUpdate)
     EXPECT_CALL(*wproxy.initial_acknack_, restart_timer()).Times(1u);
     wproxy.start(wattr);
 
-    // Update MISSING changes util sequence number 3.
-    wproxy.missing_changes_update(SequenceNumber_t(0, 3));
-    ASSERT_EQ(wproxy.changes_from_writer_low_mark_, SequenceNumber_t(0, 0));
-    ASSERT_EQ(wproxy.changes_from_writer_.size(), 3u);
-    ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 1))->getStatus(), ChangeFromWriterStatus_t::MISSING);
-    ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 2))->getStatus(), ChangeFromWriterStatus_t::MISSING);
-    ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 3))->getStatus(), ChangeFromWriterStatus_t::MISSING);
+    // Simulate reception of a HEARBEAT with last sequence number = 3
+    bool assert_liveliness = false;
+    wproxy.process_heartbeat( 1, SequenceNumber_t( 0, 0 ), SequenceNumber_t( 0, 3 ), true, true, false, assert_liveliness);
+
+    //ASSERT_EQ(wproxy.changes_from_writer_low_mark_, SequenceNumber_t(0, 0));
+    //ASSERT_EQ(wproxy.changes_from_writer_.size(), 3u);
+    //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 1))->getStatus(), ChangeFromWriterStatus_t::MISSING);
+    //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 2))->getStatus(), ChangeFromWriterStatus_t::MISSING);
+    //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 3))->getStatus(), ChangeFromWriterStatus_t::MISSING);
+    wproxy.missing_changes().bitmap_get()
+
 
     // Add two UNKNOWN with sequence numberes 4 and 5.
     wproxy.changes_from_writer_.insert(ChangeFromWriter_t(SequenceNumber_t(0,4)));
@@ -85,7 +87,7 @@ TEST(WriterProxyTests, MissingChangesUpdate)
     wproxy.changes_from_writer_.insert(ChangeFromWriter_t(SequenceNumber_t(0, 7)));
     wproxy.changes_from_writer_.insert(ChangeFromWriter_t(SequenceNumber_t(0, 8)));
     wproxy.received_change_set(SequenceNumber_t(0, 8));
-    wproxy.changes_from_writer_.insert(ChangeFromWriter_t(SequenceNumber_t(0, 9)));
+    wproxy.changes_from_writer_.insert(ChangeFromWriter_t(SequenceNumber_t(0, 9))); // doesn't make sense
 
     // Update MISSING changes util sequence number 8.
     wproxy.missing_changes_update(SequenceNumber_t(0, 8));
@@ -344,8 +346,3 @@ TEST(WriterProxyTests, IrrelevantChangeSet)
 } // namespace fastrtps
 } // namespace eprosima
 
-int main(int argc, char **argv)
-{
-    testing::InitGoogleMock(&argc, argv);
-    return RUN_ALL_TESTS();
-}

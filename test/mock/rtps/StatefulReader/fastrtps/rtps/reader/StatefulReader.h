@@ -33,7 +33,11 @@ class StatefulReader : public RTPSReader
 {
     public:
 
-        StatefulReader() {}
+        StatefulReader()
+        {
+            // By default ours mock send_acknack does nothing
+            // ON_CALL( *this, simp_send_acknack );
+        }
 
         StatefulReader(ReaderHistory* history, RecursiveTimedMutex* mutex) : RTPSReader(history, mutex) {}
 
@@ -52,10 +56,16 @@ class StatefulReader : public RTPSReader
 
         void send_acknack(
                 const WriterProxy* /*writer*/,
-                const SequenceNumberSet_t& /*sns*/,
+                const SequenceNumberSet_t& sns,
                 const RTPSMessageSenderInterface& /*sender*/,
                 bool /*is_final*/)
-        {}
+        {
+            // only insterested in SequenceNumberSet_t. 
+            simp_send_acknack( sns );
+        }
+
+        // See gmock cookbook #SimplerInterfaces
+        MOCK_METHOD1(simp_send_acknack, void( const SequenceNumberSet_t& ));
 
         void send_acknack(
                 const WriterProxy* /*writer*/,

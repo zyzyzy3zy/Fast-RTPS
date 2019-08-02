@@ -20,7 +20,7 @@ if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER))
     if(GTEST_FOUND AND GMOCK_FOUND)
         find_package(Threads REQUIRED)
 
-        set(WRITERPROXYTESTS_SOURCE WriterProxyTests.cpp
+        set(WRITERPROXYTESTS_SOURCE WriterProxyTests.cpp WriterProxyTestsRefact.cpp
             ${PROJECT_SOURCE_DIR}/src/cpp/qos/WriterQos.cpp
             ${PROJECT_SOURCE_DIR}/src/cpp/log/Log.cpp
             ${PROJECT_SOURCE_DIR}/src/cpp/log/StdoutConsumer.cpp
