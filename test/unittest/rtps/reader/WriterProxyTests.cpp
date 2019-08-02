@@ -33,22 +33,31 @@ namespace rtps {
 
 TEST(WriterProxyTests, MissingChangesUpdate)
 {
+    using ::testing::ReturnRef;
+    using ::testing::NiceMock;
+
+    WriterProxyData wattr( 4u, 1u );
+    NiceMock<StatefulReader> readerMock; // avoid annoying uninteresting call warnings
+
+    // We must prevent any callbacks from WriterProxy TimedEvents to avoid interference with out EXPECT_CALLS
+    ReaderTimes never_callback;
+    never_callback.initialAcknackDelay = never_callback.heartbeatResponseDelay = c_TimeInfinite;
+    ON_CALL( readerMock, getTimes ).WillByDefault( ReturnRef( never_callback ) );
 
     // Testing the Timed events are properly configured
-    // We must avoid it use to avoid interference with testing
-
-
-    WriterProxyData wattr(4u, 1u);
-    StatefulReader readerMock;
     WriterProxy wproxy(&readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig());
     EXPECT_CALL(*wproxy.initial_acknack_, update_interval(readerMock.getTimes().initialAcknackDelay)).Times(1u);
     EXPECT_CALL(*wproxy.heartbeat_response_, update_interval(readerMock.getTimes().heartbeatResponseDelay)).Times(1u);
     EXPECT_CALL(*wproxy.initial_acknack_, restart_timer()).Times(1u);
     wproxy.start(wattr);
 
-    // Simulate reception of a HEARBEAT with last sequence number = 3
+    // Simulate Writer initial HEARTBEAT if its history is empty
     bool assert_liveliness = false;
-    wproxy.process_heartbeat( 1, SequenceNumber_t( 0, 0 ), SequenceNumber_t( 0, 3 ), true, true, false, assert_liveliness);
+    wproxy.process_heartbeat( 1, SequenceNumber_t( 0, 1 ), SequenceNumber_t( 0, 0 ), false, false, false, assert_liveliness );
+
+    // Simulate reception of a HEARTBEAT with last sequence number = 3
+    
+    wproxy.process_heartbeat( 1, SequenceNumber_t( 0, 1 ), SequenceNumber_t( 0, 3 ), false, false, false, assert_liveliness);
 
     //ASSERT_EQ(wproxy.changes_from_writer_low_mark_, SequenceNumber_t(0, 0));
     //ASSERT_EQ(wproxy.changes_from_writer_.size(), 3u);
