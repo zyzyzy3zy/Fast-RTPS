@@ -33,6 +33,11 @@ namespace rtps {
 
 TEST(WriterProxyTests, MissingChangesUpdate)
 {
+
+    // Testing the Timed events are properly configured
+    // We must avoid it use to avoid interference with testing
+
+
     WriterProxyData wattr(4u, 1u);
     StatefulReader readerMock;
     WriterProxy wproxy(&readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig());
@@ -50,7 +55,7 @@ TEST(WriterProxyTests, MissingChangesUpdate)
     //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 1))->getStatus(), ChangeFromWriterStatus_t::MISSING);
     //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 2))->getStatus(), ChangeFromWriterStatus_t::MISSING);
     //ASSERT_EQ(wproxy.changes_from_writer_.find(SequenceNumber_t(0, 3))->getStatus(), ChangeFromWriterStatus_t::MISSING);
-    wproxy.missing_changes().bitmap_get()
+    
 
 
     // Add two UNKNOWN with sequence numberes 4 and 5.

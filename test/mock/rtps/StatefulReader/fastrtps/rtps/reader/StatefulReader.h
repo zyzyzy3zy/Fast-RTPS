@@ -33,11 +33,7 @@ class StatefulReader : public RTPSReader
 {
     public:
 
-        StatefulReader()
-        {
-            // By default ours mock send_acknack does nothing
-            // ON_CALL( *this, simp_send_acknack );
-        }
+        StatefulReader() {}
 
         StatefulReader(ReaderHistory* history, RecursiveTimedMutex* mutex) : RTPSReader(history, mutex) {}
 
