@@ -33,13 +33,7 @@ class StatefulReader : public RTPSReader
 {
     public:
 
-        StatefulReader()
-        {
-            using ::testing::ReturnRef;
-
-            // by default return the member values
-            ON_CALL( *this, getTimes ).WillByDefault( ReturnRef( times_ ) );
-        }
+        StatefulReader() { }
 
         StatefulReader(ReaderHistory* history, RecursiveTimedMutex* mutex) : RTPSReader(history, mutex) {}
 
@@ -54,7 +48,7 @@ class StatefulReader : public RTPSReader
         // In real class, inherited from Endpoint base class.
         inline const GUID_t& getGuid() const { return guid_; };
 
-        MOCK_METHOD0( getTimes, ReaderTimes& () );
+        ReaderTimes& getTimes() {  return times_;  };
 
         void send_acknack(
                 const WriterProxy* /*writer*/,
