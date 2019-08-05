@@ -154,6 +154,14 @@ public:
     size_t unknown_missing_changes_up_to(const SequenceNumber_t& seq_num) const;
 
     /**
+     * @brief Returns the number of irrelevant changes up to a certain sequence number
+     * @note Currently only used for testing purposes
+     * @param seq_num Sequence number limiting the query (not included)
+     * @return The number of irrelevant changes with a sequence number less than seq_num
+     */
+    size_t irrelevant_changes_up_to(const SequenceNumber_t& seq_num) const;
+
+    /**
      * Get the attributes of the writer represented by this proxy.
      * @return const reference to the attributes of the writer represented by this proxy.
      */
