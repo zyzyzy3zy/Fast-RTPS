@@ -144,8 +144,10 @@ TEST(WriterProxyTests, MissingChangesUpdate)
 
     ASSERT_THAT( t6, wproxy.missing_changes() );
     ASSERT_EQ( SequenceNumber_t( 0, 6 ), wproxy.available_changes_max() );
+    ASSERT_EQ( 1, wproxy.unknown_missing_changes_up_to( SequenceNumber_t( 0, 8 )));
+    ASSERT_EQ( 2, wproxy.unknown_missing_changes_up_to( SequenceNumber_t( 0, 10 )));
 
-    // 9. Simulate reception of DATA(10)
+    // 9. Simulate reception of HEARTBEAT(1,10)
     EXPECT_CALL( *wproxy.heartbeat_response_, restart_timer() ).Times( 1u );
     wproxy.process_heartbeat( heartbeat_count++, SequenceNumber_t( 0, 1 ), SequenceNumber_t( 0, 10 ), false, false, false, assert_liveliness );
 
@@ -154,6 +156,7 @@ TEST(WriterProxyTests, MissingChangesUpdate)
     t6.add( SequenceNumber_t( 0, 9 ) );
     ASSERT_THAT( t6, wproxy.missing_changes() );
     ASSERT_EQ( SequenceNumber_t( 0, 6 ), wproxy.available_changes_max() );
+
 }
 
 TEST(WriterProxyTests, LostChangesUpdate)
