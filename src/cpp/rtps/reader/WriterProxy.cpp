@@ -515,6 +515,34 @@ size_t WriterProxy::unknown_missing_changes_up_to(const SequenceNumber_t& seq_nu
     return returnedValue;
 }
 
+size_t WriterProxy::irrelevant_changes_up_to(const SequenceNumber_t& seq_num) const
+{
+#if defined(__DEBUG) && defined(__linux__)
+    assert(get_mutex_owner() == get_thread_id());
+#endif
+
+    size_t returnedValue = 0;
+
+    if(seq_num > changes_from_writer_low_mark_)
+    {
+        for(ChangeIterator ch = changes_from_writer_.begin();
+            ch != changes_from_writer_.end() && ch->getSequenceNumber() < seq_num;
+            ++ch)
+        {
+            if (ch->getStatus() == ChangeFromWriterStatus_t::RECEIVED)
+            {
+                if (ch->isRelevant() == false)
+                {
+                    ++returnedValue;
+
+                }
+            }
+        }
+    }
+
+    return returnedValue;
+}
+
 size_t WriterProxy::number_of_changes_from_writer() const
 {
 #if defined(__DEBUG) && defined(__linux__)
