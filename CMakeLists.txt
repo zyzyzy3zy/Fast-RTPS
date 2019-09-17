@@ -212,7 +212,26 @@ include(${PROJECT_SOURCE_DIR}/cmake/common/eprosima_libraries.cmake)
 eprosima_find_package(fastcdr REQUIRED)
 eprosima_find_thirdparty(Asio asio)
 eprosima_find_thirdparty(TinyXML2 tinyxml2)
+
+#allow architecture dependent config file search for foonathan_memory
+if("${CMAKE_GENERATOR_PLATFORM}" MATCHES "^([Ww][Ii][Nn]32)$")
+    set(foonathan_vendor_FIND_LIBRARY_USE "FIND_LIBRARY_USE_LIB32_PATHS")
+    get_property(foonathan_vendor_FIND_LIBRARY_USE_value GLOBAL PROPERTY FIND_LIBRARY_USE_LIB32_PATHS SET)
+    set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB32_PATHS TRUE)       
+elseif ("${CMAKE_GENERATOR_PLATFORM}" MATCHES "^([Xx]64)$")
+    set(foonathan_vendor_FIND_LIBRARY_USE "FIND_LIBRARY_USE_LIB64_PATHS")
+    get_property(foonathan_vendor_FIND_LIBRARY_USE_value GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS SET)
+    set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS TRUE)   
+endif()
+
 find_package(foonathan_memory REQUIRED)
+
+#restore global properties state
+if(foonathan_vendor_FIND_LIBRARY_USE)
+    set_property(GLOBAL PROPERTY ${foonathan_vendor_FIND_LIBRARY_USE} ${foonathan_vendor_FIND_LIBRARY_USE_value})
+    unset(foonathan_vendor_FIND_LIBRARY_USE)
+    unset(foonathan_vendor_FIND_LIBRARY_USE_value)
+endif() 
 
 if(ANDROID)
     eprosima_find_thirdparty(android-ifaddrs android-ifaddrs)
@@ -244,39 +263,6 @@ if(SECURITY OR TLS_FOUND)
     set(LINK_SSL 1)
 else()
     set(LINK_SSL 0)
-endif()
-
-###############################################################################
-# Java application
-###############################################################################
-option(BUILD_JAVA "Activate the compilation of the Java application" OFF)
-option(TEST_JAVA "Perform testing when compile the Java application" OFF)
-
-if(EPROSIMA_INSTALLER)
-    set(BUILD_JAVA ON)
-endif()
-
-if(BUILD_JAVA)
-    include(${PROJECT_SOURCE_DIR}/cmake/dev/java_support.cmake)
-
-    if(TEST_JAVA)
-        set(CMD_JAVA "build")
-    else()
-        set(CMD_JAVA "assemble")
-    endif()
-
-    include(${PROJECT_SOURCE_DIR}/cmake/common/GitUtils.cmake)
-
-    # Need to be downloaded at configuration time to be available at build time.
-    # Using ExternalProject fails because the source isn't yet downloaded when gradle is called.
-    git_clone(
-        PROJECT_NAME fastrtpsgen
-        GIT_URL https://github.com/eProsima/Fast-RTPS-Gen
-        DIRECTORY ${PROJECT_SOURCE_DIR})
-
-    file(RENAME ${PROJECT_SOURCE_DIR}/Fast-RTPS-Gen ${PROJECT_SOURCE_DIR}/fastrtpsgen)
-
-    gradle_build(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}gen ${CMD_JAVA})
 endif()
 
 ###############################################################################
@@ -420,33 +406,6 @@ if(INSTALL_EXAMPLES)
   set(CPACK_COMPONENT_EXAMPLES_DESCRIPTION "eProsima ${PROJECT_NAME_LARGE} examples")
 
   set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} examples)
-endif()
-
-if(BUILD_JAVA)
-    install(FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}gen/share/fastrtps/${PROJECT_NAME}gen.jar
-        DESTINATION ${DATA_INSTALL_DIR}/${PROJECT_NAME}
-        COMPONENT java
-        )
-
-    if(WIN32)
-        install(PROGRAMS
-            ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}gen/scripts/${PROJECT_NAME}gen.bat
-            DESTINATION ${BIN_INSTALL_DIR}
-            COMPONENT java
-            )
-    else()
-        install(PROGRAMS
-            ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}gen/scripts/${PROJECT_NAME}gen
-            DESTINATION ${BIN_INSTALL_DIR}
-            COMPONENT java
-            )
-    endif()
-
-    ### Java component
-    set(CPACK_COMPONENT_JAVA_DISPLAY_NAME "Java application")
-    set(CPACK_COMPONENT_JAVA_DESCRIPTION "eProsima ${PROJECT_NAME_LARGE} generator")
-
-    set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} java)
 endif()
 
 if(BUILD_DOCUMENTATION)
