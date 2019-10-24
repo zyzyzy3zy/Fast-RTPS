@@ -45,7 +45,7 @@ bool HelloWorldSubscriber::init()
 {
     ParticipantAttributes PParam;
     PParam.rtps.builtin.domainId = 0;
-    PParam.rtps.setName("DynHelloWorld_sub");
+    PParam.rtps.setName("DynString_sub");
     mp_participant = Domain::createParticipant(PParam, (ParticipantListener*)&m_part_list);
     if(mp_participant==nullptr)
         return false;
@@ -54,9 +54,8 @@ bool HelloWorldSubscriber::init()
     DynamicTypeBuilder_ptr created_type_ulong = DynamicTypeBuilderFactory::GetInstance()->CreateUint32Builder();
     DynamicTypeBuilder_ptr created_type_string = DynamicTypeBuilderFactory::GetInstance()->CreateStringBuilder();
     DynamicTypeBuilder_ptr struct_type_builder = DynamicTypeBuilderFactory::GetInstance()->CreateStructBuilder();
-    struct_type_builder->AddMember(0, "index", created_type_ulong.get());
-    struct_type_builder->AddMember(1, "message", created_type_string.get());
-    struct_type_builder->SetName("HelloWorld");
+    struct_type_builder->AddMember(0, "data", created_type_string.get());
+    struct_type_builder->SetName("std_msgs__String");
     DynamicType_ptr dynType = struct_type_builder->Build();
     m_DynType.SetDynamicType(dynType);
     m_listener.m_DynHello = DynamicDataFactory::GetInstance()->CreateData(dynType);
@@ -67,8 +66,8 @@ bool HelloWorldSubscriber::init()
     //CREATE THE SUBSCRIBER
     SubscriberAttributes Rparam;
     Rparam.topic.topicKind = NO_KEY;
-    Rparam.topic.topicDataType = "HelloWorld";
-    Rparam.topic.topicName = "HelloWorldTopic";
+    Rparam.topic.topicDataType = "std_msgs__String";
+    Rparam.topic.topicName = "hello_dds";
     //Rparam.topic.topicDiscoveryKind = NO_CHECK; // Do it compatible with other HelloWorlds
 
     mp_subscriber = Domain::createSubscriber(mp_participant,Rparam,(SubscriberListener*)&m_listener);
@@ -128,11 +127,9 @@ void HelloWorldSubscriber::SubListener::onNewDataMessage(Subscriber* sub)
             this->n_samples++;
             // Print your structure data here.
             std::string message;
-            m_DynHello->GetStringValue(message, 1);
-            uint32_t index;
-            m_DynHello->GetUint32Value(index, 0);
+            m_DynHello->GetStringValue(message, 0);
 
-            std::cout << "Message: "<<message<< " with index: "<<index<< " RECEIVED"<<std::endl;
+            std::cout << "Message: "<< message<< std::endl;
         }
     }
 }

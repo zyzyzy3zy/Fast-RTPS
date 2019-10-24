@@ -49,19 +49,17 @@ bool HelloWorldPublisher::init()
     DynamicTypeBuilder_ptr struct_type_builder(DynamicTypeBuilderFactory::GetInstance()->CreateStructBuilder());
 
     // Add members to the struct.
-    struct_type_builder->AddMember(0, "index", DynamicTypeBuilderFactory::GetInstance()->CreateUint32Type());
-    struct_type_builder->AddMember(1, "message", DynamicTypeBuilderFactory::GetInstance()->CreateStringType());
-    struct_type_builder->SetName("HelloWorld");
+    struct_type_builder->AddMember(0, "data", DynamicTypeBuilderFactory::GetInstance()->CreateStringType());
+    struct_type_builder->SetName("std_msgs__String");
 
     DynamicType_ptr dynType = struct_type_builder->Build();
     m_DynType.SetDynamicType(dynType);
     m_DynHello = DynamicDataFactory::GetInstance()->CreateData(dynType);
-    m_DynHello->SetUint32Value(0, 0);
-    m_DynHello->SetStringValue("HelloWorld", 1);
+    m_DynHello->SetStringValue("This is an string", 0);
 
     ParticipantAttributes PParam;
     PParam.rtps.builtin.domainId = 0;
-    PParam.rtps.setName("DynHelloWorld_pub");
+    PParam.rtps.setName("DynString_pub");
     mp_participant = Domain::createParticipant(PParam, (ParticipantListener*)&m_part_list);
 
     if(mp_participant==nullptr)
@@ -73,8 +71,8 @@ bool HelloWorldPublisher::init()
     //CREATE THE PUBLISHER
     PublisherAttributes Wparam;
     Wparam.topic.topicKind = NO_KEY;
-    Wparam.topic.topicDataType = "HelloWorld";
-    Wparam.topic.topicName = "HelloWorldTopic";
+    Wparam.topic.topicDataType = "std_msgs__String";
+    Wparam.topic.topicName = "hello_ros2";
     //Wparam.topic.topicDiscoveryKind = NO_CHECK;  // Do it compatible with other HelloWorlds
     mp_publisher = Domain::createPublisher(mp_participant,Wparam,(PublisherListener*)&m_listener);
     if(mp_publisher == nullptr)
@@ -133,11 +131,9 @@ void HelloWorldPublisher::runThread(uint32_t samples, uint32_t sleep)
         if(publish(samples != 0))
         {
             std::string message;
-            m_DynHello->GetStringValue(message, 1);
-            uint32_t index;
-            m_DynHello->GetUint32Value(index, 0);
+            m_DynHello->GetStringValue(message, 0);
 
-            std::cout << "Message: " << message << " with index: " << index << " SENT" << std::endl;
+            std::cout << "Message: " << message << std::endl;
             ++i;
         }
         eClock::my_sleep(sleep);
@@ -165,9 +161,6 @@ bool HelloWorldPublisher::publish(bool waitForListener)
 {
     if(m_listener.firstConnected || !waitForListener || m_listener.n_matched>0)
     {
-        uint32_t index;
-        m_DynHello->GetUint32Value(index, 0);
-        m_DynHello->SetUint32Value(index+1, 0);
         mp_publisher->write((void*)m_DynHello);
         return true;
     }
