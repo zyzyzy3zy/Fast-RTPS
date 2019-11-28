@@ -105,6 +105,7 @@ void RTPSReader::remove_persistence_guid(const RemoteWriterAttributes& wdata)
     auto count = --persistence_guid_count_[wdata.endpoint.persistence_guid];
     if (count == 0)
     {
+        persistence_guid_count_.erase(wdata.endpoint.persistence_guid);
         if (m_att.durabilityKind < TRANSIENT)
         {
             history_record_.erase(wdata.endpoint.persistence_guid);
@@ -121,17 +122,17 @@ SequenceNumber_t RTPSReader::update_last_notified(const GUID_t& guid, const Sequ
     if (p_guid != persistence_guid_map_.end())
     {
         guid_to_look = p_guid->second;
-    }
 
-    auto p_seq = history_record_.find(guid_to_look);
-    if (p_seq != history_record_.end())
-    {
-        ret_val = p_seq->second;
-    }
+        auto p_seq = history_record_.find(guid_to_look);
+        if(p_seq != history_record_.end())
+        {
+            ret_val = p_seq->second;
+        }
 
-    if (ret_val < seq)
-    {
-        set_last_notified(guid_to_look, seq);
+        if(ret_val < seq)
+        {
+            set_last_notified(guid_to_look, seq);
+        }
     }
 
     return ret_val;
