@@ -103,6 +103,10 @@ RTPSParticipant* RTPSDomain::createParticipant(
 
     PParam.participantID = ID;
     int pid = System::GetPID();
+
+    srand(static_cast<unsigned int>(time(NULL)));
+    int rid = rand();
+
     GuidPrefix_t guidP;
     LocatorList_t loc;
     IPFinder::getIP4Address(&loc);
@@ -127,14 +131,15 @@ RTPSParticipant* RTPSDomain::createParticipant(
             PParam.builtin.initialPeersList.push_back(local);
         }
     }
+
     guidP.value[4] = octet(pid);
     guidP.value[5] = octet(pid >> 8);
     guidP.value[6] = octet(pid >> 16);
     guidP.value[7] = octet(pid >> 24);
     guidP.value[8] = octet(ID);
     guidP.value[9] = octet(ID >> 8);
-    guidP.value[10] = octet(ID >> 16);
-    guidP.value[11] = octet(ID >> 24);
+    guidP.value[10] = octet(rid);
+    guidP.value[11] = octet(rid >> 8);
 
     RTPSParticipant* p = new RTPSParticipant(nullptr);
     RTPSParticipantImpl* pimpl = new RTPSParticipantImpl(PParam,guidP,p,listen);
