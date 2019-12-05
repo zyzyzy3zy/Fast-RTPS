@@ -171,6 +171,9 @@ bool EDP::newLocalReaderProxyData(
     };
 
     //ADD IT TO THE LIST OF READERPROXYDATA
+    std::lock_guard<std::recursive_mutex> pdp_lock(*mp_PDP->getMutex());
+    // always take the PDP mutex before the ParticipantProxyData one
+
     GUID_t participant_guid;
     ReaderProxyData* reader_data = this->mp_PDP->addReaderProxyData(reader->getGuid(), participant_guid, init_fun);
     if(reader_data == nullptr)
@@ -291,6 +294,9 @@ bool EDP::newLocalWriterProxyData(
     };
 
     //ADD IT TO THE LIST OF READERPROXYDATA
+    std::lock_guard<std::recursive_mutex> pdp_lock(*mp_PDP->getMutex());
+    // always take the PDP mutex before the ParticipantProxyData one
+
     GUID_t participant_guid;
     WriterProxyData* writer_data = this->mp_PDP->addWriterProxyData(writer->getGuid(), participant_guid, init_fun);
     if(writer_data == nullptr)
