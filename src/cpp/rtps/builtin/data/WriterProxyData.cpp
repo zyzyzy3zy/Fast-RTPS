@@ -693,6 +693,15 @@ void WriterProxyData::clear()
 }
 
 //!Unlock the ParticipantProxyData protective mutex
+void WriterProxyData::lock()
+{
+    if(ppd_mutex_)
+    {
+        ppd_mutex_->lock();
+    }
+}
+
+//!Unlock the ParticipantProxyData protective mutex
 void WriterProxyData::unlock()
 {
     if(ppd_mutex_)

@@ -384,6 +384,9 @@ public:
             const NetworkFactory& network);
 
     //!Unlock the ParticipantProxyData protective mutex
+    void lock();
+
+    //!Unlock the ParticipantProxyData protective mutex
     void unlock();
 
     //!Associate a protection mutex to the proxy, ParticipantProxyData one

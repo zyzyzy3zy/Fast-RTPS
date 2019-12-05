@@ -691,7 +691,16 @@ void ReaderProxyData::unlock()
     if(ppd_mutex_)
     {
         ppd_mutex_->unlock();
+    }
 }
+
+//!lock the ParticipantProxyData protective mutex
+void ReaderProxyData::lock()
+{
+    if(ppd_mutex_)
+    {
+        ppd_mutex_->lock();
+    }
 }
 
 //!Associate a protection mutex to the proxy, ParticipantProxyData one

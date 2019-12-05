@@ -884,7 +884,6 @@ bool EDP::pairing_reader_proxy_with_any_local_writer(
     // writer proxy data
     temp_reader_proxy_data_.copy(rdata);
     rdata->unlock();
-    rdata = &temp_reader_proxy_data_;
 
     std::lock_guard<std::recursive_mutex> pguard(*mp_PDP->getMutex());
     std::lock_guard<std::recursive_mutex> guard(*mp_RTPSParticipant->getParticipantMutex());
@@ -896,18 +895,18 @@ bool EDP::pairing_reader_proxy_with_any_local_writer(
         (*wit)->getMutex().unlock();
         if(mp_PDP->lookupWriterProxyData(writerGUID, temp_writer_proxy_data_))
         {
-            bool valid = validMatching(&temp_writer_proxy_data_, rdata);
+            bool valid = validMatching(&temp_writer_proxy_data_, &temp_reader_proxy_data_);
 
             if(valid)
             {
 #if HAVE_SECURITY
                 if(!mp_RTPSParticipant->security_manager().discovered_reader(writerGUID, participant_guid,
-                            *rdata, (*wit)->getAttributes().security_attributes()))
+                    temp_reader_proxy_data_, (*wit)->getAttributes().security_attributes()))
                 {
                     logError(RTPS_EDP, "Security manager returns an error for writer " << writerGUID);
                 }
 #else
-                if((*wit)->matched_reader_add(*rdata))
+                if((*wit)->matched_reader_add(temp_reader_proxy_data_))
                 {
                     logInfo(RTPS_EDP, "Valid Matching to local writer: " << writerGUID.entityId);
                     //MATCHED AND ADDED CORRECTLY:
@@ -915,7 +914,7 @@ bool EDP::pairing_reader_proxy_with_any_local_writer(
                     {
                         MatchingInfo info;
                         info.status = MATCHED_MATCHING;
-                        info.remoteEndpointGuid = rdata->guid();
+                        info.remoteEndpointGuid = temp_reader_proxy_data_.guid();
                         (*wit)->getListener()->onWriterMatched((*wit),info);
                     }
                 }
@@ -923,18 +922,18 @@ bool EDP::pairing_reader_proxy_with_any_local_writer(
             }
             else
             {
-                if((*wit)->matched_reader_is_matched(rdata->guid())
-                        && (*wit)->matched_reader_remove(rdata->guid()))
+                if((*wit)->matched_reader_is_matched(temp_reader_proxy_data_.guid())
+                        && (*wit)->matched_reader_remove(temp_reader_proxy_data_.guid()))
                 {
 #if HAVE_SECURITY
-                    mp_RTPSParticipant->security_manager().remove_reader((*wit)->getGuid(), participant_guid, rdata->guid());
+                    mp_RTPSParticipant->security_manager().remove_reader((*wit)->getGuid(), participant_guid, temp_reader_proxy_data_.guid());
 #endif
                     //MATCHED AND ADDED CORRECTLY:
                     if((*wit)->getListener()!=nullptr)
                     {
                         MatchingInfo info;
                         info.status = REMOVED_MATCHING;
-                        info.remoteEndpointGuid = rdata->guid();
+                        info.remoteEndpointGuid = temp_reader_proxy_data_.guid();
                         (*wit)->getListener()->onWriterMatched((*wit),info);
                     }
                 }
@@ -942,6 +941,7 @@ bool EDP::pairing_reader_proxy_with_any_local_writer(
         }
     }
 
+    rdata->lock();
     return true;
 }
 
@@ -1048,7 +1048,6 @@ bool EDP::pairing_writer_proxy_with_any_local_reader(
     // writer proxy data
     temp_writer_proxy_data_.copy(wdata);
     wdata->unlock();
-    wdata = &temp_writer_proxy_data_;
 
     std::lock_guard<std::recursive_mutex> pguard(*mp_PDP->getMutex());
     std::lock_guard<std::recursive_mutex> guard(*mp_RTPSParticipant->getParticipantMutex());
@@ -1062,18 +1061,18 @@ bool EDP::pairing_writer_proxy_with_any_local_reader(
         (*rit)->getMutex().unlock();
         if(mp_PDP->lookupReaderProxyData(readerGUID, temp_reader_proxy_data_))
         {
-            bool valid = validMatching(&temp_reader_proxy_data_, wdata);
+            bool valid = validMatching(&temp_reader_proxy_data_, &temp_writer_proxy_data_);
 
             if(valid)
             {
 #if HAVE_SECURITY
                 if(!mp_RTPSParticipant->security_manager().discovered_writer(readerGUID, participant_guid,
-                            *wdata, (*rit)->getAttributes().security_attributes()))
+                            *&temp_writer_proxy_data_, (*rit)->getAttributes().security_attributes()))
                 {
                     logError(RTPS_EDP, "Security manager returns an error for reader " << readerGUID);
                 }
 #else
-                if((*rit)->matched_writer_add(*wdata))
+                if((*rit)->matched_writer_add(temp_writer_proxy_data_))
                 {
                     logInfo(RTPS_EDP, "Valid Matching to local reader: " << readerGUID.entityId);
                     //MATCHED AND ADDED CORRECTLY:
@@ -1081,7 +1080,7 @@ bool EDP::pairing_writer_proxy_with_any_local_reader(
                     {
                         MatchingInfo info;
                         info.status = MATCHED_MATCHING;
-                        info.remoteEndpointGuid = wdata->guid();
+                        info.remoteEndpointGuid = temp_writer_proxy_data_.guid();
                         (*rit)->getListener()->onReaderMatched((*rit),info);
                     }
                 }
@@ -1089,24 +1088,27 @@ bool EDP::pairing_writer_proxy_with_any_local_reader(
             }
             else
             {
-                if((*rit)->matched_writer_is_matched(wdata->guid())
-                        && (*rit)->matched_writer_remove(wdata->guid()))
+                if((*rit)->matched_writer_is_matched(temp_writer_proxy_data_.guid())
+                        && (*rit)->matched_writer_remove(temp_writer_proxy_data_.guid()))
                 {
 #if HAVE_SECURITY
-                    mp_RTPSParticipant->security_manager().remove_writer((*rit)->getGuid(), participant_guid, wdata->guid());
+                    mp_RTPSParticipant->security_manager().remove_writer((*rit)->getGuid(), participant_guid, &temp_writer_proxy_data_->guid());
 #endif
                     //MATCHED AND ADDED CORRECTLY:
                     if((*rit)->getListener()!=nullptr)
                     {
                         MatchingInfo info;
                         info.status = REMOVED_MATCHING;
-                        info.remoteEndpointGuid = wdata->guid();
+                        info.remoteEndpointGuid = temp_writer_proxy_data_.guid();
                         (*rit)->getListener()->onReaderMatched((*rit),info);
                     }
                 }
             }
         }
     }
+
+    wdata->lock();
+
     return true;
 }
 
