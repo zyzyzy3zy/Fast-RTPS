@@ -131,7 +131,7 @@ void PDPListener::onNewCacheChangeAdded(
                 guid = temp_participant_data_.m_guid;
 
                 // if new create and copy the temp_participant_data
-                status = !pdata ? ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT :
+                status = create ? ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT :
                     ParticipantDiscoveryInfo::CHANGED_QOS_PARTICIPANT;
             }
         }
