@@ -83,7 +83,7 @@ void PDPListener::onNewCacheChangeAdded(
         // Release reader lock to avoid ABBA lock. PDP mutex should always be first.
         // Keep change information on local variables to check consistency later
         SequenceNumber_t seq_num = change->sequenceNumber;
-        ParticipantDiscoveryInfo::DISCOVERY_STATUS status = ParticipantDiscoveryInfo::CHANGED_QOS_PARTICIPANT;
+        // if new create and copy the temp_participant_data
         reader->getMutex().unlock();
 
         // changes may arise here on reader status!!!
@@ -101,6 +101,8 @@ void PDPListener::onNewCacheChangeAdded(
         // 1- search in the local collection
         std::shared_ptr<ParticipantProxyData> pdata = parent_pdp_->get_from_local_proxies(guid.guidPrefix);
         bool create = !pdata;
+        ParticipantDiscoveryInfo::DISCOVERY_STATUS status = create ? ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT :
+            ParticipantDiscoveryInfo::CHANGED_QOS_PARTICIPANT;
 
         // 2- If not found search in the pool (maybe other participant created it)
         if(!pdata)
@@ -130,9 +132,6 @@ void PDPListener::onNewCacheChangeAdded(
                 change->instanceHandle = temp_participant_data_.m_key;
                 guid = temp_participant_data_.m_guid;
 
-                // if new create and copy the temp_participant_data
-                status = create ? ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT :
-                    ParticipantDiscoveryInfo::CHANGED_QOS_PARTICIPANT;
             }
         }
 
