@@ -181,7 +181,7 @@ void PDPListener::onNewCacheChangeAdded(
             lock.unlock();
         }
         
-        if( pdata && deserialize)
+        if( pdata && ( create || deserialize ) )
         {
             RTPSParticipantListener* listener = parent_pdp_->getRTPSParticipant()->getListener();
             if(listener != nullptr)

@@ -501,6 +501,8 @@ void ParticipantProxyData::clear()
     m_properties.length = 0;
     m_userData.clear();
 
+    version_ = SequenceNumber_t();
+
     // reset the lease_callback_
     lease_callback_.reset();
 }
