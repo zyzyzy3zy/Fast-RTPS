@@ -885,7 +885,8 @@ bool PDP::remove_remote_participant(
     std::shared_ptr<ParticipantProxyData> pdata = nullptr;
 
     //Remove it from our vector or RTPSParticipantProxies:
-    this->mp_mutex->lock();
+    std::unique_lock<std::recursive_mutex> pdp_lock(*mp_mutex);
+
     for(ResourceLimitedVector<std::shared_ptr<ParticipantProxyData>>::iterator pit = participant_proxies_.begin();
             pit!=participant_proxies_.end();++pit)
     {
@@ -896,107 +897,129 @@ bool PDP::remove_remote_participant(
             break;
         }
     }
-    this->mp_mutex->unlock();
 
-    if(pdata !=nullptr)
+    if(!pdata)
     {
-        std::lock_guard<std::recursive_mutex> ppd_lock(pdata->ppd_mutex_);
-
-        if(mp_EDP!=nullptr)
-        {
-            RTPSParticipantListener* listener = mp_RTPSParticipant->getListener();
-
-            for(ReaderProxyData* rit : pdata->m_readers)
-            {
-                GUID_t reader_guid(rit->guid());
-                if (reader_guid != c_Guid_Unknown)
-                {
-                    mp_EDP->unpairReaderProxy(partGUID, reader_guid);
-
-                    if (listener)
-                    {
-                        ReaderDiscoveryInfo info(std::move(*rit));
-                        info.status = ReaderDiscoveryInfo::REMOVED_READER;
-                        listener->onReaderDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
-                    }
-                }
-            }
-            for(WriterProxyData* wit : pdata->m_writers)
-            {
-                GUID_t writer_guid(wit->guid());
-                if (writer_guid != c_Guid_Unknown)
-                {
-                    mp_EDP->unpairWriterProxy(partGUID, writer_guid);
-
-                    if (listener)
-                    {
-                        WriterDiscoveryInfo info(std::move(*wit));
-                        info.status = WriterDiscoveryInfo::REMOVED_WRITER;
-                        listener->onWriterDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
-                    }
-                }
-            }
-        }
-
-        if(mp_builtin->mp_WLP != nullptr)
-            this->mp_builtin->mp_WLP->removeRemoteEndpoints(pdata.get());
-        this->mp_EDP->removeRemoteEndpoints(pdata.get());
-        this->removeRemoteEndpoints(pdata.get());
-
-#if HAVE_SECURITY
-        mp_builtin->mp_participantImpl->security_manager().remove_participant(*pdata);
-#endif
-
-        this->mp_PDPReaderHistory->getMutex()->lock();
-        for(std::vector<CacheChange_t*>::iterator it=this->mp_PDPReaderHistory->changesBegin();
-                it!=this->mp_PDPReaderHistory->changesEnd();++it)
-        {
-            if((*it)->instanceHandle == pdata->m_key)
-            {
-                this->mp_PDPReaderHistory->remove_change(*it);
-                break;
-            }
-        }
-        this->mp_PDPReaderHistory->getMutex()->unlock();
-
-        auto listener =  mp_RTPSParticipant->getListener();
-        if (listener != nullptr)
-        {
-            std::lock_guard<std::mutex> lock(callback_mtx_);
-            ParticipantDiscoveryInfo info(*pdata);
-            info.status = reason;
-            listener->onParticipantDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
-        }
-
-        PDP::pool_mutex_.lock();
-
-        // Return reader proxy objects to pool
-        for (ReaderProxyData* rit : pdata->m_readers)
-        {
-            reader_proxies_pool_.push_back(rit);
-        }
-        pdata->m_readers.clear();
-
-        // Return writer proxy objects to pool
-        for (WriterProxyData* wit : pdata->m_writers)
-        {
-            writer_proxies_pool_.push_back(wit);
-        }
-        pdata->m_writers.clear();
-
-        PDP::pool_mutex_.unlock();
-
-        // Cancel lease event
-        if (pdata->lease_duration_event != nullptr)
-        {
-            pdata->lease_callback_.remove_listener(local.guidPrefix);
-        }
-
-       
-        return true;
+        // nothing to remove
+        return false;
     }
 
-    return false;
+    // proper order of acquisition: PDP -> ppd
+    std::unique_lock<std::recursive_mutex> ppd_lock(pdata->ppd_mutex_);
+    pdp_lock.unlock();
+
+    if(mp_EDP!=nullptr)
+    {
+        std::list<GUID_t> to_removal_;
+
+        RTPSParticipantListener* listener = mp_RTPSParticipant->getListener();
+
+        for(ReaderProxyData* rit : pdata->m_readers)
+        {
+            GUID_t reader_guid(rit->guid());
+            if (reader_guid != c_Guid_Unknown)
+            {
+                to_removal_.push_back(reader_guid);
+
+                if (listener)
+                {
+                    ReaderDiscoveryInfo info(*rit);
+                    info.status = ReaderDiscoveryInfo::REMOVED_READER;
+                    listener->onReaderDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
+                }
+            }
+        }
+
+        ppd_lock.unlock(); // proper order of adquisition EDP reader -> ppd
+        for(GUID_t & reader_guid : to_removal_)
+        {
+            mp_EDP->unpairReaderProxy(partGUID, reader_guid);
+        }
+        to_removal_.clear();
+        ppd_lock.lock();
+
+        for(WriterProxyData* wit : pdata->m_writers)
+        {
+            GUID_t writer_guid(wit->guid());
+            if (writer_guid != c_Guid_Unknown)
+            {
+                to_removal_.push_back(writer_guid);
+
+                if (listener)
+                {
+                    WriterDiscoveryInfo info(*wit);
+                    info.status = WriterDiscoveryInfo::REMOVED_WRITER;
+                    listener->onWriterDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
+                }
+            }
+        }
+
+        ppd_lock.unlock(); // proper order of adquisition EDP reader -> ppd
+        for(GUID_t & writer_guid : to_removal_)
+        {
+            mp_EDP->unpairWriterProxy(partGUID, writer_guid);
+        }
+        to_removal_.clear();
+        ppd_lock.lock();
+
+    }
+
+    if(mp_builtin->mp_WLP != nullptr)
+        this->mp_builtin->mp_WLP->removeRemoteEndpoints(pdata.get());
+    mp_EDP->removeRemoteEndpoints(pdata.get());
+    removeRemoteEndpoints(pdata.get());
+
+#if HAVE_SECURITY
+    mp_builtin->mp_participantImpl->security_manager().remove_participant(*pdata);
+#endif
+
+    this->mp_PDPReaderHistory->getMutex()->lock();
+    for(std::vector<CacheChange_t*>::iterator it=this->mp_PDPReaderHistory->changesBegin();
+            it!=this->mp_PDPReaderHistory->changesEnd();++it)
+    {
+        if((*it)->instanceHandle == pdata->m_key)
+        {
+            this->mp_PDPReaderHistory->remove_change(*it);
+            break;
+        }
+    }
+    this->mp_PDPReaderHistory->getMutex()->unlock();
+
+    auto listener =  mp_RTPSParticipant->getListener();
+    if (listener != nullptr)
+    {
+        std::lock_guard<std::mutex> lock(callback_mtx_);
+        ParticipantDiscoveryInfo info(*pdata);
+        info.status = reason;
+        listener->onParticipantDiscovery(mp_RTPSParticipant->getUserRTPSParticipant(), std::move(info));
+    }
+
+    PDP::pool_mutex_.lock();
+
+    // Return reader proxy objects to pool
+    for (ReaderProxyData* rit : pdata->m_readers)
+    {
+        reader_proxies_pool_.push_back(rit);
+    }
+    pdata->m_readers.clear();
+
+    // Return writer proxy objects to pool
+    for (WriterProxyData* wit : pdata->m_writers)
+    {
+        writer_proxies_pool_.push_back(wit);
+    }
+    pdata->m_writers.clear();
+
+    PDP::pool_mutex_.unlock();
+
+    // Cancel lease event
+    if (pdata->lease_duration_event != nullptr)
+    {
+        pdata->lease_callback_.remove_listener(local.guidPrefix);
+    }
+
+    return true;
+ 
 }
 
 const BuiltinAttributes& PDP::builtin_attributes() const

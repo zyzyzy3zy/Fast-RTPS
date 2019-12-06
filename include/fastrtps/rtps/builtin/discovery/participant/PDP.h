@@ -219,6 +219,7 @@ public:
 
     /**
      * This method assigns remote endpoints to the builtin endpoints defined in this protocol. It also calls the corresponding methods in EDP and WLP.
+     * ParticipantProxyData object must be locked
      * @param pdata Pointer to the RTPSParticipantProxyData object.
      */
     virtual void assignRemoteEndpoints(ParticipantProxyData* pdata) = 0;
@@ -237,6 +238,7 @@ public:
 
     /**
      * Remove remote endpoints from the participant discovery protocol
+     * ParticipantProxyData mutex lock should be own
      * @param pdata Pointer to the ParticipantProxyData to remove
      */
     virtual void removeRemoteEndpoints(ParticipantProxyData* pdata) = 0;

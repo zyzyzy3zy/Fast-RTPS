@@ -671,6 +671,9 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
     temp_writer_proxy_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
     temp_writer_proxy_data_.m_qos.m_reliability.kind = RELIABLE_RELIABILITY_QOS;
 
+    // unlock the ParticipantProxyData mutex before locking on edp ones for matching
+    pdata.ppd_mutex_.unlock();
+
     //FIXME: FIX TO NOT FAIL WITH BAD BUILTIN ENDPOINT SET
     //auxendp = 1;
     if(auxendp!=0 && publications_reader_.first!=nullptr) //Exist Pub Writer and i have pub reader
@@ -782,6 +785,9 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
         }
     }
 #endif
+
+    // relock the pdp mutex
+    pdata.ppd_mutex_.lock();
 }
 
 void EDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
@@ -794,6 +800,9 @@ void EDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
     uint32_t endp = pdata->m_availableBuiltinEndpoints;
     uint32_t auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PUBLICATION_ANNOUNCER;
+
+    pdata->ppd_mutex_.unlock();
+
     //FIXME: FIX TO NOT FAIL WITH BAD BUILTIN ENDPOINT SET
     //auxendp = 1;
     if(auxendp!=0 && publications_reader_.first!=nullptr) //Exist Pub Writer and i have pub reader
@@ -889,6 +898,8 @@ void EDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
         }
     }
 #endif
+
+    pdata->ppd_mutex_.lock();
 }
 
 bool EDPSimple::areRemoteEndpointsMatched(const ParticipantProxyData* pdata)

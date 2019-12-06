@@ -71,11 +71,13 @@ class EDP
         virtual bool initEDP(BuiltinAttributes& attributes) = 0;
         /**
          * Abstract method that assigns remote endpoints when a new RTPSParticipantProxyData is discovered.
+         * Note that the ParticipantProxyData argument mutex must be locked.
          * @param pdata Discovered ParticipantProxyData
          */
         virtual void assignRemoteEndpoints(const ParticipantProxyData& pdata) = 0;
         /**
          * Remove remote endpoints from the endpoint discovery protocol
+         * Note that the ParticipantProxyData argument mutex must be locked.
          * @param pdata Pointer to the ParticipantProxyData to remove
          */
         virtual void removeRemoteEndpoints(ParticipantProxyData* pdata){(void) pdata;};

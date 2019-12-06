@@ -369,7 +369,10 @@ void PDPSimple::assignRemoteEndpoints(ParticipantProxyData* pdata)
         temp_writer_data_.set_remote_locators(pdata->metatraffic_locators, network, use_multicast_locators);
         temp_writer_data_.m_qos.m_reliability.kind = BEST_EFFORT_RELIABILITY_QOS;
         temp_writer_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
+
+        pdata->ppd_mutex_.unlock(); // proper acquisition order PDP Reader -> ppd
         mp_PDPReader->matched_writer_add(temp_writer_data_);
+        pdata->ppd_mutex_.lock();
     }
     auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PARTICIPANT_DETECTOR;
@@ -383,7 +386,10 @@ void PDPSimple::assignRemoteEndpoints(ParticipantProxyData* pdata)
         temp_reader_data_.set_remote_locators(pdata->metatraffic_locators, network, use_multicast_locators);
         temp_reader_data_.m_qos.m_reliability.kind = BEST_EFFORT_RELIABILITY_QOS;
         temp_reader_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
+
+        pdata->ppd_mutex_.unlock(); // proper acquisition order PDP Reader -> ppd
         mp_PDPWriter->matched_reader_add(temp_reader_data_);
+        pdata->ppd_mutex_.lock();
     }
 
 #if HAVE_SECURITY
@@ -398,22 +404,29 @@ void PDPSimple::assignRemoteEndpoints(ParticipantProxyData* pdata)
 
 void PDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
 {
-    logInfo(RTPS_PDP,"For RTPSParticipant: "<<pdata->m_guid);
+    GUID_t guid = pdata->m_guid;
+    logInfo(RTPS_PDP,"For RTPSParticipant: "<<guid);
     uint32_t endp = pdata->m_availableBuiltinEndpoints;
     uint32_t auxendp = endp;
+
+    // Keep proper order of mutexes acquisition
+    pdata->ppd_mutex_.unlock();
+
     auxendp &=DISC_BUILTIN_ENDPOINT_PARTICIPANT_ANNOUNCER;
     if(auxendp!=0)
     {
-        GUID_t writer_guid(pdata->m_guid.guidPrefix, c_EntityId_SPDPWriter);
+        GUID_t writer_guid(guid.guidPrefix, c_EntityId_SPDPWriter);
         mp_PDPReader->matched_writer_remove(writer_guid);
     }
     auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PARTICIPANT_DETECTOR;
     if(auxendp!=0)
     {
-        GUID_t reader_guid(pdata->m_guid.guidPrefix, c_EntityId_SPDPReader);
+        GUID_t reader_guid(guid.guidPrefix, c_EntityId_SPDPReader);
         mp_PDPWriter->matched_reader_remove(reader_guid);
     }
+
+    pdata->ppd_mutex_.lock();
 }
 
 void PDPSimple::notifyAboveRemoteEndpoints(const ParticipantProxyData& pdata)

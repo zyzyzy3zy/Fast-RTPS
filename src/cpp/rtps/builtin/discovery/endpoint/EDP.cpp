@@ -293,7 +293,7 @@ bool EDP::newLocalWriterProxyData(
         return true;
     };
 
-    //ADD IT TO THE LIST OF READERPROXYDATA
+    //ADD IT TO THE LIST OF WRITERPROXYDATA
     std::lock_guard<std::recursive_mutex> pdp_lock(*mp_PDP->getMutex());
     // always take the PDP mutex before the ParticipantProxyData one
 
