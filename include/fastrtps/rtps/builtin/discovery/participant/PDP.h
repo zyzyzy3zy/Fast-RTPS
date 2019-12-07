@@ -414,6 +414,20 @@ protected:
             bool with_lease_duration);
 
     /**
+     * Adds an entry to the collection of participant proxy information.
+     * May use one of the entries present in the pool.
+     * If sucessful returns with ParticipantProxyData mutex ownership
+     *
+     * @param ppd strong reference to the ParticipantProxyData global object
+     * @param with_lease_duration indicates whether lease duration event should be created.
+     *
+     * @return pointer to the currently inserted entry, nullptr if allocation limits were reached.
+     */
+    ParticipantProxy* PDP::add_participant_proxy(
+        std::shared_ptr<ParticipantProxyData> ppd,
+        bool with_lease_duration = true);
+
+    /**
      * Gets the key of a participant proxy data.
      *
      * @param [in] participant_guid GUID of the participant to look for.

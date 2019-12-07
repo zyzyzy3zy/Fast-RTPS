@@ -34,6 +34,14 @@ ParticipantProxy::ParticipantProxy(const RTPSParticipantAllocationAttributes& al
 {
 }
 
+ParticipantProxy::~ParticipantProxy()
+{
+    if(lease_duration_event_)
+    {
+        delete lease_duration_event_;
+    }
+}
+
 void ParticipantProxy::clear()
 {
     readers_.clear();

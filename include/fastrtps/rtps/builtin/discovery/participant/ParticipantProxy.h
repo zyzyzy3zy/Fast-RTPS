@@ -58,6 +58,54 @@ public:
         return proxy_data_->lease_duration_us_;
     }
 
+    std::shared_ptr<ParticipantProxyData> get_ppd()
+    {
+        return proxy_data_;
+    }
+
+    void set_ppd(const std::shared_ptr<ParticipantProxyData> & p)
+    {
+        proxy_data_ = p;
+    }
+
+    std::recursive_mutex& get_ppd_mutex()
+    {
+        return proxy_data_->ppd_mutex_;
+    }
+
+    GUID_t get_guid() const
+    {
+        return proxy_data_->m_guid;
+    }
+
+    GuidPrefix_t get_guid_prefix() const
+    {
+        return get_guid().guidPrefix;
+    }
+
+    void set_ppd(std::shared_ptr<ParticipantProxyData> && p)
+    {
+        proxy_data_ = std::move(p);
+    }
+
+    TimedEvent* get_lease_duration_event()
+    {
+        return lease_duration_event_;
+    }
+
+    void set_lease_duration_event(TimedEvent* event)
+    {
+        assert(nullptr == lease_duration_event_);
+
+        if(nullptr == lease_duration_event_)
+        {
+            lease_duration_event_ = event;
+        }
+    }
+
+    // should we do callback on lease durtion event?
+    bool should_check_lease_duration_;
+
 private:
 
     //! hard reference to the global ParticipantProxyData
@@ -69,10 +117,9 @@ private:
     //! hard reference to the global WriterProxyDatas this participant is aware of
     ResourceLimitedVector<std::shared_ptr<WriterProxyData>> writers_;
 
-    // Lease duration ancillary
+    // Lease duration event for the PDP callbacks
     TimedEvent* lease_duration_event_;
-    bool should_check_lease_duration_;
-
+    
     //! Store the last timestamp it was received a RTPS message from the remote participant.
     std::chrono::steady_clock::time_point last_received_message_tm_;
 

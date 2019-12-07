@@ -131,30 +131,40 @@ void PDPListener::onNewCacheChangeAdded(
                 // After correctly reading it
                 change->instanceHandle = temp_participant_data_.m_key;
                 guid = temp_participant_data_.m_guid;
-
             }
         }
 
         if( create )
         {
+            ParticipantProxy* pp = nullptr;
+
             if(deserialize)
             {   // we must create a new proxy
-                pdata = parent_pdp_->createParticipantProxyData( temp_participant_data_, writer_guid);
-                // createParticipantProxyData returns with ParticipantProxyData mutex ownership
+                pp = parent_pdp_->create_participant_proxy(temp_participant_data_, writer_guid);
+                // create_participant_proxy returns with ParticipantProxyData mutex ownership
             }
             else
             {   // already around add to the locals
-                parent_pdp_->add_participant_proxy_data(pdata);
-                pdata->ppd_mutex_.lock();
+                pp = parent_pdp_->add_participant_proxy(pdata);
+                // add_participant_proxy returns with the ParticipantProxyData mutex ownership
             }
             // Release mutexes ownership
             reader->getMutex().unlock();
             lock.unlock();
 
-            parent_pdp_->announceParticipantState(false);
-            parent_pdp_->assignRemoteEndpoints(pdata.get());
+            if(nullptr != pp)
+            {
+                if(!pdata)
+                {
+                    pdata = pp->get_ppd();
+                }
 
-            pdata->ppd_mutex_.unlock(); // got by createParticipantProxyData
+                parent_pdp_->announceParticipantState(false);
+                parent_pdp_->assignRemoteEndpoints(pdata.get());
+
+                pdata->ppd_mutex_.unlock(); 
+                // got by create_participant_proxy or add_participant_proxy
+            }
         }
         else if ( deserialize )
         {
@@ -162,7 +172,6 @@ void PDPListener::onNewCacheChangeAdded(
 
             // Participant proxy data mutex was lock above to keep version_
             pdata->updateData(temp_participant_data_);
-            pdata->isAlive = true;
 
             // Release mutexes ownership
             reader->getMutex().unlock();

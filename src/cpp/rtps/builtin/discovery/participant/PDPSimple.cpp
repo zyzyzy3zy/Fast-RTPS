@@ -138,7 +138,7 @@ bool PDPSimple::init(RTPSParticipantImpl* part)
     return true;
 }
 
-std::shared_ptr<ParticipantProxyData> PDPSimple::createParticipantProxyData(
+ParticipantProxy* PDPSimple::create_participant_proxy(
         const ParticipantProxyData& participant_data,
         const GUID_t&)
 {
@@ -150,7 +150,7 @@ std::shared_ptr<ParticipantProxyData> PDPSimple::createParticipantProxyData(
     if(flags != ParticipantFilteringFlags_t::NO_FILTER)
     {
         const GUID_t & remote = participant_data.m_guid;
-        const GUID_t & local = getLocalParticipantProxyData()->m_guid;
+        const GUID_t & local = getRTPSParticipant()->getGuid();
 
         if(!local.is_on_same_host_as(remote))
         {
@@ -178,17 +178,22 @@ std::shared_ptr<ParticipantProxyData> PDPSimple::createParticipantProxyData(
         }
     }
 
-    std::shared_ptr<ParticipantProxyData> pdata = add_participant_proxy_data(participant_data.m_guid, true);
+    ParticipantProxy* pp = add_participant_proxy(participant_data.m_guid,true);
 
-    if( pdata )
+    if( nullptr != pp )
     {
+        auto pdata = pp->get_ppd();
+        auto event = pp->get_lease_duration_event();
+        
         pdata->copy(participant_data);
-        pdata->isAlive = true;
-        pdata->lease_duration_event->update_interval(pdata->m_leaseDuration);
-        pdata->lease_duration_event->restart_timer();
+        event->update_interval(pdata->lease_duration_);
+        event->restart_timer();
+
+        // notice the ppd lock is own on success
+        return pp;
     }
 
-    return pdata;
+    return nullptr;
 }
 
 // EDPStatic requires matching on ParticipantProxyData property updates
