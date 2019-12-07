@@ -388,7 +388,7 @@ private:
     //!Reader locator information
     ReaderLocator locator_info_;
     //!Attributes of the Remote Reader
-    ReaderProxyData reader_attributes_;
+    std::weak_ptr<ReaderProxyData> reader_attributes_;
     //!Pointer to the associated StatefulWriter.
     StatefulWriter* writer_;
     //!Set of the changes and its state.

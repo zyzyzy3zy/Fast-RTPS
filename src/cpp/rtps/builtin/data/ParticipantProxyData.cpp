@@ -52,57 +52,6 @@ void ParticipantProxyData::pool_deleter::operator()(
     PDP::return_participant_proxy_to_pool(p);
 }
 
-/**
-    * Lease duration auxiliary functor to make the callbacks to the interested participants and track them
-*/
-
-void ParticipantProxyData::lease_duration_callback::add_listener(GuidPrefix_t prefix, PDP* pdp)
-{
-    if(nullptr != p)
-    {
-        std::lock_guard<std::recursive_mutex> pool_guard(p->ppd_mutex_);
-        listeners_[prefix] = pdp;
-    }
-}
-
-void ParticipantProxyData::lease_duration_callback::remove_listener(GuidPrefix_t prefix)
-{
-    if(nullptr != p)
-    {
-        std::lock_guard<std::recursive_mutex> pool_guard(p->ppd_mutex_);
-        listeners_.erase(prefix);
-    }
-}
-
-void ParticipantProxyData::lease_duration_callback::reset()
-{
-    p = nullptr;
-    listeners_.clear();
-}
-
-void ParticipantProxyData::lease_duration_callback::operator()() const
-{
-    if(nullptr != p)
-    {
-        for(auto pair : listeners_)
-        {
-            std::lock_guard<std::recursive_mutex> pool_guard(p->ppd_mutex_);
-            pair.second->check_remote_participant_liveliness(p);
-        }
-    }
-}
-
-
-struct lease_duration_callback
-{
-    std::map<GuidPrefix_t, PDP*> listeners_;
-
-    void add_listener(GuidPrefix_t prefix, PDP* p);
-    void remove_listener(GuidPrefix_t prefix);
-
-    void operator()() const;
-};
-
 ParticipantProxyData::ParticipantProxyData(const RTPSParticipantAllocationAttributes& allocation)
     : m_protocolVersion(c_ProtocolVersion)
     , m_VendorId(c_VendorId_Unknown)
@@ -114,21 +63,7 @@ ParticipantProxyData::ParticipantProxyData(const RTPSParticipantAllocationAttrib
     , security_attributes_(0UL)
     , plugin_security_attributes_(0UL)
 #endif
-    , isAlive(false)
-    , lease_duration_event(nullptr)
-    , should_check_lease_duration(false)
-    , m_readers(allocation.readers)
-    , m_writers(allocation.writers)
-    , lease_callback_(this)
     {
-        std::lock_guard<std::recursive_mutex> lock(PDP::pool_mutex_);
-
-        lease_duration_event = new TimedEvent(PDP::event_thr_,
-            [this]() -> bool
-        {
-            lease_callback_();
-            return false;
-        }, 0.0);
     }
 
 ParticipantProxyData::ParticipantProxyData(const ParticipantProxyData& pdata)
@@ -141,45 +76,21 @@ ParticipantProxyData::ParticipantProxyData(const ParticipantProxyData& pdata)
     , default_locators(pdata.default_locators)
     , m_participantName(pdata.m_participantName)
     , m_key(pdata.m_key)
-    , m_leaseDuration(pdata.m_leaseDuration)
+    , lease_duration_(pdata.lease_duration_)
+    , lease_duration_us_(pdata.lease_duration_us_)
 #if HAVE_SECURITY
     , identity_token_(pdata.identity_token_)
     , permissions_token_(pdata.permissions_token_)
     , security_attributes_(pdata.security_attributes_)
     , plugin_security_attributes_(pdata.plugin_security_attributes_)
 #endif
-    , isAlive(pdata.isAlive)
     , m_properties(pdata.m_properties)
     , m_userData(pdata.m_userData)
-    , lease_duration_event(nullptr)
-    , should_check_lease_duration(false)
-    , lease_callback_(nullptr)
-    , lease_duration_(std::chrono::microseconds(TimeConv::Duration_t2MicroSecondsInt64(pdata.m_leaseDuration)))
     // This method is only called from SecurityManager when a new participant is discovered and the
     // corresponding DiscoveredParticipantInfo struct is created. Only participant info is used,
     // so there is no need to copy m_readers and m_writers
     {
     }
-
-ParticipantProxyData::~ParticipantProxyData()
-{
-    logInfo(RTPS_PARTICIPANT, m_guid);
-
-    for (ReaderProxyData* it : m_readers)
-    {
-        delete it;
-    }
-
-    for (WriterProxyData* it : m_writers)
-    {
-        delete it;
-    }
-
-    if (lease_duration_event != nullptr)
-    {
-        delete lease_duration_event;
-    }
-}
 
 bool ParticipantProxyData::writeToCDRMessage(CDRMessage_t* msg, bool write_encapsulation)
 {
@@ -232,7 +143,7 @@ bool ParticipantProxyData::writeToCDRMessage(CDRMessage_t* msg, bool write_encap
     }
     {
         ParameterTime_t p(PID_PARTICIPANT_LEASE_DURATION, PARAMETER_TIME_LENGTH);
-        p.time = m_leaseDuration;
+        p.time = lease_duration_;
         if (!p.addToCDRMessage(msg)) return false;
     }
     {
@@ -390,8 +301,8 @@ bool ParticipantProxyData::readFromCDRMessage(
             {
                 const ParameterTime_t* p = dynamic_cast<const ParameterTime_t*>(param);
                 assert(p != nullptr);
-                this->m_leaseDuration = p->time.to_duration_t();
-                lease_duration_ = std::chrono::microseconds(TimeConv::Duration_t2MicroSecondsInt64(m_leaseDuration));
+                lease_duration_ = p->time.to_duration_t();
+                lease_duration_us_ = std::chrono::microseconds(TimeConv::Duration_t2MicroSecondsInt64(lease_duration_));
                 break;
             }
             case PID_BUILTIN_ENDPOINT_SET:
@@ -488,9 +399,8 @@ void ParticipantProxyData::clear()
     default_locators.multicast.clear();
     m_participantName = "";
     m_key = InstanceHandle_t();
-    m_leaseDuration = Duration_t();
-    lease_duration_ = std::chrono::microseconds::zero();
-    isAlive = true;
+    lease_duration_ = Duration_t();
+    lease_duration_us_ = std::chrono::microseconds();
 #if HAVE_SECURITY
     identity_token_ = IdentityToken();
     permissions_token_ = PermissionsToken();
@@ -502,9 +412,6 @@ void ParticipantProxyData::clear()
     m_userData.clear();
 
     version_ = SequenceNumber_t();
-
-    // reset the lease_callback_
-    lease_callback_.reset();
 }
 
 void ParticipantProxyData::copy(const ParticipantProxyData& pdata)
@@ -519,10 +426,9 @@ void ParticipantProxyData::copy(const ParticipantProxyData& pdata)
     metatraffic_locators = pdata.metatraffic_locators;
     default_locators = pdata.default_locators;
     m_participantName = pdata.m_participantName;
-    m_leaseDuration = pdata.m_leaseDuration;
-    lease_duration_ = std::chrono::microseconds(TimeConv::Duration_t2MicroSecondsInt64(pdata.m_leaseDuration));
+    lease_duration_ = pdata.lease_duration_;
+    lease_duration_us_ = pdata.lease_duration_us_;
     m_key = pdata.m_key;
-    isAlive = pdata.isAlive;
     m_properties = pdata.m_properties;
     m_userData = pdata.m_userData;
     version_ = pdata.version_;
@@ -546,30 +452,15 @@ bool ParticipantProxyData::updateData(ParticipantProxyData& pdata)
     metatraffic_locators = pdata.metatraffic_locators;
     default_locators = pdata.default_locators;
     m_properties = pdata.m_properties;
-    m_leaseDuration = pdata.m_leaseDuration;
+    lease_duration_ = pdata.lease_duration_;
+    lease_duration_us_ = pdata.lease_duration_us_;
     m_userData = pdata.m_userData;
-    isAlive = true;
 #if HAVE_SECURITY
     identity_token_ = pdata.identity_token_;
     permissions_token_ = pdata.permissions_token_;
     security_attributes_ = pdata.security_attributes_;
     plugin_security_attributes_ = pdata.plugin_security_attributes_;
 #endif
-    auto new_lease_duration = std::chrono::microseconds(TimeConv::Duration_t2MicroSecondsInt64(m_leaseDuration));
-    if (this->lease_duration_event != nullptr)
-    {
-        if(new_lease_duration < lease_duration_)
-        {
-            // Calculate next trigger.
-            auto real_lease_tm = last_received_message_tm_ + new_lease_duration;
-            auto next_trigger = real_lease_tm - std::chrono::steady_clock::now();
-            lease_duration_event->cancel_timer();
-            lease_duration_event->update_interval_millisec(
-                    (double)std::chrono::duration_cast<std::chrono::milliseconds>(next_trigger).count());
-            lease_duration_event->restart_timer();
-        }
-    }
-    lease_duration_ = new_lease_duration;
     return true;
 }
 
@@ -638,11 +529,6 @@ GUID_t ParticipantProxyData::get_persistence_guid() const
     }
 
     return persistent;
-}
-
-void ParticipantProxyData::assert_liveliness()
-{
-    last_received_message_tm_ = std::chrono::steady_clock::now();
 }
 
 } /* namespace rtps */

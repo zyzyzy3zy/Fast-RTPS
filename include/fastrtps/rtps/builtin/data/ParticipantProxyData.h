@@ -87,8 +87,6 @@ class ParticipantProxyData
 
         ParticipantProxyData(const ParticipantProxyData& pdata);
 
-        virtual ~ParticipantProxyData();
-
         //!Protocol version
         ProtocolVersion_t m_protocolVersion;
         //!GUID
@@ -108,7 +106,7 @@ class ParticipantProxyData
         //!
         InstanceHandle_t m_key;
         //!
-        Duration_t m_leaseDuration;
+        Duration_t lease_duration_;
 #if HAVE_SECURITY
         //!
         IdentityToken identity_token_;
@@ -120,19 +118,9 @@ class ParticipantProxyData
         security::PluginParticipantSecurityAttributesMask plugin_security_attributes_;
 #endif
         //!
-        bool isAlive;
-        //!
         ParameterPropertyList_t m_properties;
         //!
         std::vector<octet> m_userData;
-        //!
-        TimedEvent* lease_duration_event;
-        //!
-        bool should_check_lease_duration;
-        //!
-        ResourceLimitedVector<ReaderProxyData*> m_readers;
-        //!
-        ResourceLimitedVector<WriterProxyData*> m_writers;
 
         /**
          * Update the data.
@@ -177,17 +165,8 @@ class ParticipantProxyData
          */
         GUID_t get_persistence_guid() const;
 
-        void assert_liveliness();
-
-        const std::chrono::steady_clock::time_point& last_received_message_tm() const
-        {
-            return last_received_message_tm_;
-        }
-
-        const std::chrono::microseconds& lease_duration() const
-        {
-            return lease_duration_;
-        }
+        //! Remote participant lease duration in microseconds (a convenience)
+        std::chrono::microseconds lease_duration_us_;
 
         /**
          * Now multiple PDP objects can access simultaneously this structure
@@ -205,31 +184,6 @@ class ParticipantProxyData
         {
             void operator()(ParticipantProxyData* p) const;
         };
-
-        //! Lease duration auxiliary functor to make the callbacks to the interested participants and track them
-
-        struct lease_duration_callback
-        {
-            std::map<GuidPrefix_t, PDP*> listeners_;
-            ParticipantProxyData * p = { nullptr };
-
-            lease_duration_callback(ParticipantProxyData * ptr) : p(ptr) {}
-
-            void reset();
-
-            void add_listener(GuidPrefix_t prefix, PDP* p);
-            void remove_listener(GuidPrefix_t prefix);
-
-            void operator()() const;
-        } lease_callback_;
-
-    private:
-
-        //! Store the last timestamp it was received a RTPS message from the remote participant.
-        std::chrono::steady_clock::time_point last_received_message_tm_;
-
-        //! Remote participant lease duration in microseconds.
-        std::chrono::microseconds lease_duration_;
 };
 
 } /* namespace rtps */

@@ -339,7 +339,7 @@ private:
     //! Pointer to associated StatefulReader.
     StatefulReader* reader_;
     //! Parameters of the WriterProxy
-    WriterProxyData attributes_;
+    std::weak_ptr<WriterProxyData> attributes_;
     //!Timed event to postpone the heartbeatResponse.
     TimedEvent* heartbeat_response_;
     //! Timed event to send initial acknack.

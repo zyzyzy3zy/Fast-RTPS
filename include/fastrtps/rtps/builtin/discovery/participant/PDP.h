@@ -26,6 +26,7 @@
 
 #include "../../../common/Guid.h"
 #include "../../../attributes/RTPSParticipantAttributes.h"
+#include "../../../builtin/discovery/participant/ParticipantProxy.h"
 #include "../../../builtin/data/ReaderProxyData.h"
 #include "../../../builtin/data/WriterProxyData.h"
 #include "../../../../qos/QosPolicies.h"
@@ -79,6 +80,7 @@ public:
 
     virtual ~PDP();
 
+    //! This initialization method requires a valid ParticipantProxyData within the argument
     virtual void initializeParticipantProxyData(ParticipantProxyData* participant_data);
 
     /**
@@ -98,9 +100,9 @@ public:
      * If sucessful returns with ParticipantProxyData mutex ownership
      * @param p from DATA msg deserialization
      * @param writer_guid GUID of originating writer
-     * @return new ParticipantProxyData * or nullptr on failure
+     * @return new ParticipantProxy * or nullptr on failure
      */
-    virtual std::shared_ptr<ParticipantProxyData> createParticipantProxyData(
+    virtual ParticipantProxy* create_participant_proxy(
             const ParticipantProxyData& p,
             const GUID_t& writer_guid) = 0;
 
@@ -130,7 +132,7 @@ public:
      *
      * @return A pointer to the added ReaderProxyData (nullptr if it could not be added).
      */
-    ReaderProxyData* addReaderProxyData(
+    std::shared_ptr<ReaderProxyData> addReaderProxyData(
             const GUID_t& reader_guid,
             GUID_t& participant_guid,
             std::function<bool(ReaderProxyData*, bool, const ParticipantProxyData&)> initializer_func);
@@ -144,7 +146,7 @@ public:
      *
      * @return A pointer to the added WriterProxyData (nullptr if it could not be added).
      */
-    WriterProxyData* addWriterProxyData(
+    std::shared_ptr<WriterProxyData> addWriterProxyData(
             const GUID_t& writer_guid,
             GUID_t& participant_guid,
             std::function<bool(WriterProxyData*, bool, const ParticipantProxyData&)> initializer_func);
@@ -263,7 +265,7 @@ public:
      * Get a pointer to the local RTPSParticipant ParticipantProxyData object.
      * @return Pointer to the local RTPSParticipant ParticipantProxyData object.
      */
-    std::shared_ptr<ParticipantProxyData> getLocalParticipantProxyData()
+    ParticipantProxy* getLocalParticipantProxy()
     {
         return participant_proxies_.front();
     }
@@ -278,7 +280,7 @@ public:
      * Get a const_iterator to the beginning of the RTPSParticipant Proxies.
      * @return const_iterator.
      */
-    ResourceLimitedVector<std::shared_ptr<ParticipantProxyData>>::const_iterator ParticipantProxiesBegin()
+    ResourceLimitedVector<ParticipantProxy*>::const_iterator ParticipantProxiesBegin()
     {
         return participant_proxies_.begin();
     }
@@ -287,7 +289,7 @@ public:
      * Get a const_iterator to the end of the RTPSParticipant Proxies.
      * @return const_iterator.
      */
-    ResourceLimitedVector<std::shared_ptr<ParticipantProxyData>>::const_iterator ParticipantProxiesEnd()
+    ResourceLimitedVector<ParticipantProxy*>::const_iterator  ParticipantProxiesEnd()
     {
         return participant_proxies_.end();
     }
@@ -348,32 +350,44 @@ protected:
     //!To protect callbacks (ParticipantProxyData&)
     std::mutex callback_mtx_;
 
+    //!Registered RTPSParticipants (including the local one, that is the first one.)
+    ResourceLimitedVector<ParticipantProxy*> participant_proxies_;
+    //!Number of local participant data objects created
+    size_t participant_proxies_number_;
+    //!Pool of participant proxy data objects ready for this participant reuse
+    std::vector<ParticipantProxy*> participant_proxies_pool_;
+
     /**
      * Per-process database of Participant, Reader and Writer Proxies
     */
 
-    //!Number of participant proxy data objects created
-    static size_t participant_proxies_number_;
-    //!Registered RTPSParticipants (including the local one, that is the first one.)
-    ResourceLimitedVector<std::shared_ptr<ParticipantProxyData>> participant_proxies_;
-    //!Pool of participant proxy data objects ready for reuse
-    static std::vector<ParticipantProxyData*> participant_proxies_pool_;
-    //!Alived participant proxies reference
-    static std::map<GuidPrefix_t,std::weak_ptr<ParticipantProxyData>> pool_participant_references_;
+    //!Number of global participant proxy data objects created
+    static size_t participant_proxies_data_number_;
+    //!Pool of participant proxy data objects ready for reuse (shared among all participants)
+    static std::vector<ParticipantProxyData*> participant_proxies_data_pool_;
+
+
     //!Number of reader proxy data objects created
     static size_t reader_proxies_number_;
     //!Pool of reader proxy data objects ready for reuse
     static std::vector<ReaderProxyData*> reader_proxies_pool_;
+
     //!Number of writer proxy data objects created
     static size_t writer_proxies_number_;
     //!Pool of writer proxy data objects ready for reuse
     static std::vector<WriterProxyData*> writer_proxies_pool_;
+    
     //!Counter of the currently alive PDP instances
     static size_t pdp_counter_;
     //!Mutex protection for static variables they may be access from any PDP
     static std::recursive_mutex pool_mutex_; 
-    //! common callbacks resource event
-    static ResourceEvent event_thr_;
+
+    //!Alived participant proxies reference
+    static std::map<GuidPrefix_t, std::weak_ptr<ParticipantProxyData>> pool_participant_references_;
+    //!Alived participant readers reference
+    static std::map<GUID_t, std::weak_ptr<ReaderProxyData>> PDP::pool_reader_references_;
+    //!Alived participant writers reference
+    static std::map<GUID_t, std::weak_ptr<WriterProxyData>> PDP::pool_writer_references_;
 
     /**
      * Adds an entry to the collection of participant proxy information.
@@ -385,12 +399,9 @@ protected:
      *
      * @return pointer to the currently inserted entry, nullptr if allocation limits were reached.
      */
-    std::shared_ptr<ParticipantProxyData> add_participant_proxy_data(
+    ParticipantProxy * add_participant_proxy(
             const GUID_t& participant_guid,
             bool with_lease_duration);
-
-    //! Just add the ParticipantProxyData from the pool to the local collection
-    void  add_participant_proxy_data(std::shared_ptr<ParticipantProxyData> & ppd);
 
     /**
      * Gets the key of a participant proxy data.
@@ -423,9 +434,8 @@ private:
     //!Participant's initial announcements config
     InitialAnnouncementConfig initial_announcements_;
 
-    // TODO: modify the event functor to harbour interested participants
     void check_remote_participant_liveliness(
-            ParticipantProxyData* remote_participant);
+            ParticipantProxy* remote_participant);
 
     void check_and_notify_type_discovery(
             RTPSParticipantListener* listener,
