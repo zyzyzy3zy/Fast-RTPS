@@ -170,7 +170,7 @@ class ParticipantProxyData
 
         /**
          * Now multiple PDP objects can access simultaneously this structure
-         * this mutex will protect this members and the (Reader|Writer)ProxyData
+         * this mutex will protect this members but not the (Reader|Writer)ProxyData
         */ 
         mutable std::recursive_mutex ppd_mutex_;
 

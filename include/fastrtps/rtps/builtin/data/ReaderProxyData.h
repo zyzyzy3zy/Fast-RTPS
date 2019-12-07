@@ -354,15 +354,6 @@ public:
      */
     void clear();
 
-    //!Unlock the ParticipantProxyData protective mutex
-    void lock();
-
-    //!Unlock the ParticipantProxyData protective mutex
-    void unlock();
-
-    //!Associate a protection mutex to the proxy, ParticipantProxyData one
-    void mutex_guard(std::recursive_mutex * pM);
-
     /**
      * Check if this object can be updated with the information on another object.
      * @param rdata ReaderProxyData object to be checked.
@@ -384,6 +375,23 @@ public:
      */
     void copy(
             ReaderProxyData* rdata);
+
+    //! Returns a lock object 
+    std::unique_lock<std::recursive_mutex> unique_lock() const
+    {
+        return std::unique_lock<std::recursive_mutex>(rpd_mutex_);
+    }
+
+    /**
+     * ReaderProxyData may be a shared object among all PDPs, we want to
+     * deserialize only once if at all
+    */
+    SequenceNumber_t version_;
+
+    struct pool_deleter
+    {
+        void operator()(ReaderProxyData* p) const;
+    };
 
 private:
 
@@ -412,8 +420,11 @@ private:
     //!Type Object
     TypeObjectV1* m_type;
 
-    //!Reference to the ParticipantProxyData mutex that protects it
-    std::recursive_mutex * ppd_mutex_;
+    /**
+     * Now multiple PDP objects can access simultaneously this structure
+     * this mutex will protect its members
+    */
+    mutable std::recursive_mutex rpd_mutex_;
 };
 
 } /* namespace rtps */

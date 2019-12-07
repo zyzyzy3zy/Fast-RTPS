@@ -383,14 +383,22 @@ public:
             CDRMessage_t* msg,
             const NetworkFactory& network);
 
-    //!Unlock the ParticipantProxyData protective mutex
-    void lock();
+    //!returns a lock to protect the object
+    std::unique_lock<std::recursive_mutex> unique_lock() const
+    {
+        return std::unique_lock<std::recursive_mutex>(wpd_mutex_);
+    }
 
-    //!Unlock the ParticipantProxyData protective mutex
-    void unlock();
+    /**
+      * ReaderProxyData may be a shared object among all PDPs, we want to
+      * deserialize only once if at all
+     */
+    SequenceNumber_t version_;
 
-    //!Associate a protection mutex to the proxy, ParticipantProxyData one
-    void mutex_guard(std::recursive_mutex * pM);
+    struct pool_deleter
+    {
+        void operator()(WriterProxyData* p) const;
+    };
 
 private:
 
@@ -433,8 +441,11 @@ private:
     //!Type Object
     TypeObjectV1* m_type;
 
-    //!Reference to the ParticipantProxyData mutex that protects it
-    std::recursive_mutex * ppd_mutex_;
+    /**
+     * Now multiple PDP objects can access simultaneously this structure
+     * this mutex will protect its members
+    */
+    mutable std::recursive_mutex wpd_mutex_;
 };
 
 } /* namespace rtps */

@@ -17,10 +17,10 @@
  *
  */
 
-#include <fastrtps/rtps/builtin/data/ParticipantProxyData.h>
+#include <fastrtps/rtps/builtin/discovery/participant/ParticipantProxy.h>
+#include <fastrtps/rtps/resources/TimedEvent.h>
 
 using namespace eprosima::fastrtps;
-
 
 namespace eprosima {
 namespace fastrtps{
@@ -34,7 +34,24 @@ ParticipantProxy::ParticipantProxy(const RTPSParticipantAllocationAttributes& al
 {
 }
 
-void ParticipantProxyData::assert_liveliness()
+void ParticipantProxy::clear()
+{
+    readers_.clear();
+    writers_.clear();
+
+    // Cancel lease event
+    if(lease_duration_event_ != nullptr)
+    {
+        lease_duration_event_->cancel_timer();
+    }
+
+    should_check_lease_duration_ = false;
+
+    // release strong reference to proxy data
+    proxy_data_.reset();
+}
+
+void ParticipantProxy::assert_liveliness()
 {
     last_received_message_tm_ = std::chrono::steady_clock::now();
 }

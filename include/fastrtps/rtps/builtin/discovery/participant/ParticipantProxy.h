@@ -42,6 +42,9 @@ public:
 
     ~ParticipantProxy();
 
+    //! Clear the data (restore to default state).
+    void clear();
+
     void assert_liveliness();
 
     const std::chrono::steady_clock::time_point& last_received_message_tm() const
@@ -51,7 +54,8 @@ public:
 
     const std::chrono::microseconds& lease_duration() const
     {
-        return lease_duration_;
+        std::lock_guard<std::recursive_mutex> lck(proxy_data_->ppd_mutex_);
+        return proxy_data_->lease_duration_us_;
     }
 
 private:
@@ -71,9 +75,6 @@ private:
 
     //! Store the last timestamp it was received a RTPS message from the remote participant.
     std::chrono::steady_clock::time_point last_received_message_tm_;
-
-    //! Remote participant lease duration in microseconds.
-    std::chrono::microseconds lease_duration_;
 
 };
 

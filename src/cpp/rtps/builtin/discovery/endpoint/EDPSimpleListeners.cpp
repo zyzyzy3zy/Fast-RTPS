@@ -231,7 +231,7 @@ void EDPSimpleSUBListener::onNewCacheChangeAdded(
         logInfo(RTPS_EDP,"Disposed Remote Reader, removing...");
 
         GUID_t reader_guid = iHandle2GUID(change->instanceHandle);
-        this->sedp_->mp_PDP->removeReaderProxyData(reader_guid);
+        sedp_->mp_PDP->removeReaderProxyData(reader_guid);
     }
 
     // Remove change from history.

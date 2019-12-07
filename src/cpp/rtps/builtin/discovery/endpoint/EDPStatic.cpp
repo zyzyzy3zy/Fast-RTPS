@@ -180,7 +180,7 @@ void EDPStatic::assignRemoteEndpoints(const ParticipantProxyData& pdata)
             if(staticproperty.m_endpointType == "Reader" && staticproperty.m_status=="ALIVE")
             {
                 GUID_t guid(pdata.m_guid.guidPrefix,staticproperty.m_entityId);
-                if(!this->mp_PDP->has_reader_proxy_data(guid))//IF NOT FOUND, we CREATE AND PAIR IT
+                if(!this->mp_PDP->has_reader_proxy(guid))//IF NOT FOUND, we CREATE AND PAIR IT
                 {
                     newRemoteReader(pdata.m_guid, pdata.m_participantName, 
                         staticproperty.m_userId, staticproperty.m_entityId);
@@ -198,7 +198,7 @@ void EDPStatic::assignRemoteEndpoints(const ParticipantProxyData& pdata)
             else if(staticproperty.m_endpointType == "Reader" && staticproperty.m_status == "ENDED")
             {
                 GUID_t guid(pdata.m_guid.guidPrefix,staticproperty.m_entityId);
-                this->mp_PDP->removeReaderProxyData(guid);
+                mp_PDP->removeReaderProxyData(guid);
             }
             else if(staticproperty.m_endpointType == "Writer" && staticproperty.m_status == "ENDED")
             {

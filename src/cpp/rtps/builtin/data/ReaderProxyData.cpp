@@ -18,6 +18,7 @@
  */
 
 #include <fastrtps/rtps/builtin/data/ReaderProxyData.h>
+#include <fastrtps/rtps/builtin/discovery/participant/PDP.h>
 #include <fastrtps/rtps/common/CDRMessage_t.h>
 #include <fastrtps/log/Log.h>
 #include <fastrtps/rtps/network/NetworkFactory.h>
@@ -25,6 +26,19 @@
 namespace eprosima {
 namespace fastrtps {
 namespace rtps {
+
+/**
+    * ReaderProxyData objects are now shared among several participants PDP and
+    * are managed from a static pool in PDP thus liveliness is not each participant responsability.
+    * Each participant PDP should use shared pointers to enable the framework to track when
+    * a proxy can be returned to the pool. When no proxy is referenced in any PDP it returns to the pool.
+*/
+
+void ReaderProxyData::pool_deleter::operator()(
+    ReaderProxyData* p) const
+{
+    PDP::return_reader_proxy_to_pool(p);
+}
 
 ReaderProxyData::ReaderProxyData (
         const size_t max_unicast_locators,
@@ -41,7 +55,6 @@ ReaderProxyData::ReaderProxyData (
     , m_topicDiscoveryKind(NO_CHECK)
     , m_type_id(nullptr)
     , m_type(nullptr)
-    , ppd_mutex_(nullptr)
 {
 }
 
@@ -72,7 +85,7 @@ ReaderProxyData::ReaderProxyData(
     , m_topicDiscoveryKind(readerInfo.m_topicDiscoveryKind)
     , m_type_id(nullptr)
     , m_type(nullptr)
-    , ppd_mutex_(nullptr)
+    , version_(readerInfo.version_)
 {
     if (readerInfo.m_type_id)
     {
@@ -107,6 +120,7 @@ ReaderProxyData& ReaderProxyData::operator =(
     m_topicKind = readerInfo.m_topicKind;
     m_qos.setQos(readerInfo.m_qos, true);
     m_topicDiscoveryKind = readerInfo.m_topicDiscoveryKind;
+    version_ = readerInfo.version_;
 
     if (readerInfo.m_type_id)
     {
@@ -682,34 +696,7 @@ void ReaderProxyData::clear()
     {
         *m_type = TypeObjectV1();
     }
-    ppd_mutex_ = nullptr;
-}
-
-//!Unlock the ParticipantProxyData protective mutex
-void ReaderProxyData::unlock()
-{
-    if(ppd_mutex_)
-    {
-        ppd_mutex_->unlock();
-    }
-}
-
-//!lock the ParticipantProxyData protective mutex
-void ReaderProxyData::lock()
-{
-    if(ppd_mutex_)
-    {
-        ppd_mutex_->lock();
-    }
-}
-
-//!Associate a protection mutex to the proxy, ParticipantProxyData one
-void ReaderProxyData::mutex_guard(
-    std::recursive_mutex * pM)
-{
-    assert(ppd_mutex_ == nullptr);
-
-    ppd_mutex_ = pM;
+    version_ = SequenceNumber_t();
 }
 
 bool ReaderProxyData::is_update_allowed(
@@ -759,6 +746,7 @@ void ReaderProxyData::copy(
         m_type_id = rdata->m_type_id;
         m_type = rdata->m_type;
     }
+    version_ = rdata->version_;
 }
 
 void ReaderProxyData::add_unicast_locator(

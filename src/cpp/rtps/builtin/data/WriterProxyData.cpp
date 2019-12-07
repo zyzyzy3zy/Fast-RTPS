@@ -18,17 +18,27 @@
  */
 
 #include <fastrtps/rtps/builtin/data/WriterProxyData.h>
-
+#include <fastrtps/rtps/builtin/discovery/participant/PDP.h>
 #include <fastrtps/rtps/common/CDRMessage_t.h>
-
 #include <fastrtps/log/Log.h>
-
 #include <fastrtps/rtps/network/NetworkFactory.h>
 
 namespace eprosima {
 namespace fastrtps {
 namespace rtps {
 
+/**
+* WriterProxyData objects are now shared among several participants PDP and
+* are managed from a static pool in PDP thus liveliness is not each participant responsability.
+* Each participant PDP should use shared pointers to enable the framework to track when
+* a proxy can be returned to the pool. When no proxy is referenced in any PDP it returns to the pool.
+*/
+
+void WriterProxyData::pool_deleter::operator()(
+    WriterProxyData* p) const
+{
+    PDP::return_writer_proxy_to_pool(p);
+}
 
 WriterProxyData::WriterProxyData(
         const size_t max_unicast_locators,
@@ -46,7 +56,6 @@ WriterProxyData::WriterProxyData(
     , m_topicDiscoveryKind(NO_CHECK)
     , m_type_id(nullptr)
     , m_type(nullptr)
-    , ppd_mutex_(nullptr)
 {
 }
 
@@ -71,7 +80,7 @@ WriterProxyData::WriterProxyData(
     , m_topicDiscoveryKind(writerInfo.m_topicDiscoveryKind)
     , m_type_id(nullptr)
     , m_type(nullptr)
-    , ppd_mutex_(nullptr)
+    , version_(writerInfo.version_)
 {
     if (writerInfo.m_type_id)
     {
@@ -113,6 +122,7 @@ WriterProxyData& WriterProxyData::operator =(
     persistence_guid_ = writerInfo.persistence_guid_;
     m_qos.setQos(writerInfo.m_qos, true);
     m_topicDiscoveryKind = writerInfo.m_topicDiscoveryKind;
+    version_ = writerInfo.version_;
 
     if (writerInfo.m_type_id)
     {
@@ -689,34 +699,7 @@ void WriterProxyData::clear()
     {
         *m_type = TypeObjectV1();
     }
-    ppd_mutex_ = nullptr;
-}
-
-//!Unlock the ParticipantProxyData protective mutex
-void WriterProxyData::lock()
-{
-    if(ppd_mutex_)
-    {
-        ppd_mutex_->lock();
-    }
-}
-
-//!Unlock the ParticipantProxyData protective mutex
-void WriterProxyData::unlock()
-{
-    if(ppd_mutex_)
-    {
-        ppd_mutex_->unlock();
-    }
-}
-
-//!Associate a protection mutex to the proxy, ParticipantProxyData one
-void WriterProxyData::mutex_guard(
-    std::recursive_mutex * pM)
-{
-    assert(ppd_mutex_ == nullptr);
-
-    ppd_mutex_ = pM;
+    version_ = SequenceNumber_t();
 }
 
 void WriterProxyData::copy(
@@ -739,7 +722,7 @@ void WriterProxyData::copy(
         m_type_id = wdata->m_type_id;
         m_type = wdata->m_type;
     }
-    // ppd_mutex_ is not copied
+    version_ = wdata->version_;
 }
 
 bool WriterProxyData::is_update_allowed(

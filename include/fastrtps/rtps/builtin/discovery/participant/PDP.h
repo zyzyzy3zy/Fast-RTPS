@@ -125,7 +125,7 @@ public:
 
     /**
      * Add a ReaderProxyData to the correct ParticipantProxyData.
-     * returns with the ParticipantProxyData locked if successful to prevern ReaderProxyData corruption
+     * returns with the ReaderProxyData locked if successful to prevern ReaderProxyData corruption
      * @param [in]  reader_guid       GUID of the reader to add.
      * @param [out] participant_guid  GUID of the ParticipantProxyData where the reader was added.
      * @param [in]  initializer_func  Function to be called in order to set the data of the ReaderProxyData.
@@ -157,7 +157,7 @@ public:
      * @param [in] reader GUID_t of the reader we are looking for.
      * @return True if found.
      */
-    bool has_reader_proxy_data(const GUID_t& reader);
+    bool has_reader_proxy(const GUID_t& reader);
 
     /**
      * This method gets a copy of a ReaderProxyData object if it is found among the registered RTPSParticipants
@@ -317,6 +317,12 @@ public:
 
     //! Deleter for the ParticipantProxyData shared_ptrs
     static void return_participant_proxy_to_pool(ParticipantProxyData * p);
+    
+    //! Deleter for the ReaderProxyData shared_ptrs
+    static void return_reader_proxy_to_pool(ReaderProxyData * p);
+    
+    //! Deleter for the ParticipantProxyData shared_ptrs
+    static void return_writer_proxy_to_pool(WriterProxyData * p);
 
 protected:
     //!Pointer to the builtin protocols object.
@@ -354,7 +360,12 @@ protected:
     ResourceLimitedVector<ParticipantProxy*> participant_proxies_;
     //!Number of local participant data objects created
     size_t participant_proxies_number_;
-    //!Pool of participant proxy data objects ready for this participant reuse
+    /**
+      * Pool of participant proxy data objects ready for this participant reuse.
+      * These objects members (as collections) are protected by PDP mutex but its
+      * ProxyData objects: participant, readers and writers internally referenced
+      * protect themselves with its own mutex
+    */
     std::vector<ParticipantProxy*> participant_proxies_pool_;
 
     /**
@@ -365,7 +376,6 @@ protected:
     static size_t participant_proxies_data_number_;
     //!Pool of participant proxy data objects ready for reuse (shared among all participants)
     static std::vector<ParticipantProxyData*> participant_proxies_data_pool_;
-
 
     //!Number of reader proxy data objects created
     static size_t reader_proxies_number_;
