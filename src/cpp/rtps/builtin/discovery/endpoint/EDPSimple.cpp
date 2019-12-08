@@ -676,27 +676,44 @@ void EDPSimple::assignRemoteEndpoints(
     temp_writer_proxy_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
     temp_writer_proxy_data_.m_qos.m_reliability.kind = RELIABLE_RELIABILITY_QOS;
 
-    std::string this_name = this->mp_PDP->getRTPSParticipant()->getParticipantNames().front();
+    std::string this_name = this->mp_PDP->getRTPSParticipant()->getLocalParticipantName();
     std::string that_name = pdata.m_participantName.to_string();
 
     // pairs of nodes that HAVE TO communicate with each other
     std::set<std::pair<std::string, std::string>> whitelist;
-    whitelist.insert(std::make_pair("montreal", "lyon"));
-    whitelist.insert(std::make_pair("montreal", "hamburg"));
-    whitelist.insert(std::make_pair("montreal", "ponce"));
-    whitelist.insert(std::make_pair("montreal", "mandalay"));
-    whitelist.insert(std::make_pair("montreal", "geneva"));
+    whitelist.insert(std::make_pair("cordoba", "lyon"));
+    whitelist.insert(std::make_pair("freeport", "hamburg"));
+    whitelist.insert(std::make_pair("medellin", "hamburg"));
+    whitelist.insert(std::make_pair("portsmouth", "hamburg"));
+    whitelist.insert(std::make_pair("portsmouth", "ponce"));
+    whitelist.insert(std::make_pair("portsmouth", "mandalay"));
+    whitelist.insert(std::make_pair("portsmouth", "geneva"));
     whitelist.insert(std::make_pair("lyon", "hamburg"));
     whitelist.insert(std::make_pair("hamburg", "osaka"));
     whitelist.insert(std::make_pair("hamburg", "geneva"));
+    whitelist.insert(std::make_pair("delhi", "taipei"));
+    whitelist.insert(std::make_pair("delhi", "tripoli"));
+    whitelist.insert(std::make_pair("taipei", "osaka"));
     whitelist.insert(std::make_pair("osaka", "mandalay"));
+    whitelist.insert(std::make_pair("osaka", "tripoli"));
+    whitelist.insert(std::make_pair("osaka", "mandalay"));
+    whitelist.insert(std::make_pair("osaka", "ponce"));
+    whitelist.insert(std::make_pair("tripoli", "mandalay"));
+    whitelist.insert(std::make_pair("tripoli", "ponce"));
+    whitelist.insert(std::make_pair("kingston", "mandalay"));
+    whitelist.insert(std::make_pair("kingston", "ponce"));
+    whitelist.insert(std::make_pair("hebron", "mandalay"));
     whitelist.insert(std::make_pair("mandalay", "ponce"));
+    whitelist.insert(std::make_pair("mandalay", "geneva"));
     whitelist.insert(std::make_pair("ponce", "barcelona"));
+    whitelist.insert(std::make_pair("ponce", "rotterdam"));
+    whitelist.insert(std::make_pair("ponce", "monaco"));
     whitelist.insert(std::make_pair("ponce", "geneva"));
     whitelist.insert(std::make_pair("barcelona", "georgetown"));
-    whitelist.insert(std::make_pair("geneva", "arequipa"));
+    whitelist.insert(std::make_pair("monaco", "ponce"));
     whitelist.insert(std::make_pair("georgetown", "ponce"));
-    whitelist.insert(std::make_pair("lyon", "hamburg"));
+    whitelist.insert(std::make_pair("rotterdam", "georgetown"));
+    whitelist.insert(std::make_pair("geneva", "arequipa"));
 
     // augment the list with inverse pairs
     std::set<std::pair<std::string, std::string>> t_list(whitelist);

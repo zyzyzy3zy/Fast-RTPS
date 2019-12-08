@@ -1041,6 +1041,12 @@ std::vector<std::string> RTPSParticipantImpl::getParticipantNames() const
     return participant_names;
 }
 
+std::string RTPSParticipantImpl::getLocalParticipantName() const
+{
+    auto pdp = mp_builtinProtocols->mp_PDP;
+    return pdp->getLocalParticipantProxyData()->m_participantName.to_string();
+}
+
 bool RTPSParticipantImpl::sendSync(
         CDRMessage_t* msg,
         const Locator_t& destination_loc,

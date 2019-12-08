@@ -231,6 +231,8 @@ public:
 
     std::vector<std::string> getParticipantNames() const;
 
+    std::string getLocalParticipantName() const;
+
     /**
         * Get the participant
         * @return participant
