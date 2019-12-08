@@ -676,6 +676,41 @@ void EDPSimple::assignRemoteEndpoints(
     temp_writer_proxy_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
     temp_writer_proxy_data_.m_qos.m_reliability.kind = RELIABLE_RELIABILITY_QOS;
 
+    std::string this_name = this->mp_PDP->getRTPSParticipant()->getParticipantNames().front();
+    std::string that_name = pdata.m_participantName.to_string();
+
+    // pairs of nodes that HAVE TO communicate with each other
+    std::set<std::pair<std::string, std::string>> whitelist;
+    whitelist.insert(std::make_pair("montreal", "lyon"));
+    whitelist.insert(std::make_pair("montreal", "hamburg"));
+    whitelist.insert(std::make_pair("montreal", "ponce"));
+    whitelist.insert(std::make_pair("montreal", "mandalay"));
+    whitelist.insert(std::make_pair("montreal", "geneva"));
+    whitelist.insert(std::make_pair("lyon", "hamburg"));
+    whitelist.insert(std::make_pair("hamburg", "osaka"));
+    whitelist.insert(std::make_pair("hamburg", "geneva"));
+    whitelist.insert(std::make_pair("osaka", "mandalay"));
+    whitelist.insert(std::make_pair("mandalay", "ponce"));
+    whitelist.insert(std::make_pair("ponce", "barcelona"));
+    whitelist.insert(std::make_pair("ponce", "geneva"));
+    whitelist.insert(std::make_pair("barcelona", "georgetown"));
+    whitelist.insert(std::make_pair("geneva", "arequipa"));
+    whitelist.insert(std::make_pair("georgetown", "ponce"));
+    whitelist.insert(std::make_pair("lyon", "hamburg"));
+
+    // augment the list with inverse pairs
+    std::set<std::pair<std::string, std::string>> t_list(whitelist);
+    for (auto p : t_list)
+    {
+        whitelist.insert(std::make_pair(p.second, p.first));
+    }
+
+    if (whitelist.find(std::make_pair(this_name, that_name)) == whitelist.end())
+    {
+        logInfo(RTPS_EDP, "Discarding EDP " << that_name);
+        return;
+    }
+
     //FIXME: FIX TO NOT FAIL WITH BAD BUILTIN ENDPOINT SET
     //auxendp = 1;
     if (auxendp != 0 && publications_reader_.first != nullptr) //Exist Pub Writer and i have pub reader
