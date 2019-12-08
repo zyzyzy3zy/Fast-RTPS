@@ -88,8 +88,14 @@ ReaderProxy::~ReaderProxy()
 }
 
 void ReaderProxy::start(
-        const ReaderProxyData& reader_attributes)
+         std::shared_ptr<ReaderProxyData>& attributes)
 {
+    // must be a valid pointer
+    assert(!!attributes);
+
+    reader_attributes_ = attributes;
+    const ReaderProxyData& reader_attributes = *get_attributes();
+
     locator_info_.start(
         reader_attributes.guid(),
         reader_attributes.remote_locators().unicast,
@@ -133,12 +139,13 @@ bool ReaderProxy::update(
 
 void ReaderProxy::stop()
 {
-    auto rpd = get_attributes();
-    ReaderProxyData & attributes_ = *rpd;
+    if(!reader_attributes_.expired())
+    {
+        locator_info_.stop(get_attributes()->guid());
+    }
 
-    locator_info_.stop(attributes_.guid());
     is_active_ = false;
-    attributes_.guid(c_Guid_Unknown);
+    reader_attributes_.reset(); // unlink from global
     disable_timers();
 
     changes_for_reader_.clear();

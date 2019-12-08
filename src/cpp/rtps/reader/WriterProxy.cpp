@@ -98,21 +98,22 @@ WriterProxy::WriterProxy(
 }
 
 void WriterProxy::start(
-        const WriterProxyData& attributes,
+        std::shared_ptr<WriterProxyData>& attributes,
         const SequenceNumber_t& initial_sequence)
 {
 #if !defined(NDEBUG) && defined(FASTRTPS_SOURCE) && defined(__linux__)
     assert(get_mutex_owner() == get_thread_id());
 #endif
 
+    writer_attributes_ = attributes;
+
     heartbeat_response_->update_interval(reader_->getTimes().heartbeatResponseDelay);
     initial_acknack_->update_interval(reader_->getTimes().initialAcknackDelay);
 
-    *get_attributes() = attributes;
-    guid_as_vector_.push_back(attributes.guid());
-    guid_prefix_as_vector_.push_back(attributes.guid().guidPrefix);
+    guid_as_vector_.push_back(attributes->guid());
+    guid_prefix_as_vector_.push_back(attributes->guid().guidPrefix);
     is_alive_ = true;
-    is_on_same_process_ = RTPSDomainImpl::should_intraprocess_between(reader_->getGuid(), attributes.guid());
+    is_on_same_process_ = RTPSDomainImpl::should_intraprocess_between(reader_->getGuid(), attributes->guid());
 
     initial_acknack_->restart_timer();
     loaded_from_storage(initial_sequence);
@@ -140,7 +141,7 @@ void WriterProxy::stop()
 void WriterProxy::clear()
 {
     is_alive_ = false;
-    get_attributes()->guid(c_Guid_Unknown);
+    writer_attributes_.reset(); // release the link to the global object
     last_heartbeat_count_ = 0;
     heartbeat_final_flag_.store(false);
     guid_as_vector_.clear();

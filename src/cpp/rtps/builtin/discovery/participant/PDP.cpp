@@ -142,7 +142,7 @@ PDP::~PDP()
 }
 
 ParticipantProxy* PDP::add_participant_proxy(
-    std::shared_ptr<ParticipantProxyData> ppd,
+    std::shared_ptr<ParticipantProxyData>& ppd,
     bool with_lease_duration /* = true*/)
 {
     ParticipantProxy* ret_val = nullptr;
@@ -815,53 +815,16 @@ std::shared_ptr<ReaderProxyData> PDP::addReaderProxyData(
     // The participant must be there
     assert(pp != nullptr && participant_guid != GUID_t::unknown());
 
+    // Get Participant allocation policies just in case we have to create a new one
+    const RTPSParticipantAttributes& part_att = getRTPSParticipant()->getRTPSParticipantAttributes();
+
+    // search into the readers pool
+    if(!(ret_val = PDP::get_from_reader_proxy_pool(
+        reader_guid,
+        part_att.allocation.locators.max_unicast_locators,
+        part_att.allocation.locators.max_multicast_locators)))
     {
-        // The reader was locally unknown, we must notify its discovery
-        std::lock_guard<std::recursive_mutex> pool_lock(pool_mutex_);
-
-        // See if somebody else knowns him, if so should be mapped
-        std::map<GUID_t, std::weak_ptr<ReaderProxyData>>::iterator rit =
-            pool_reader_references_.find(reader_guid);
-
-        if(rit != pool_reader_references_.end())
-        {
-            // already there, create the reference
-            ret_val = rit->second.lock();
-        }
-        else
-        {
-            // Newbie, try to take one entry from the pool
-            if(reader_proxies_pool_.empty())
-            {
-                size_t max_proxies = reader_proxies_pool_.max_size();
-                if(reader_proxies_number_ < max_proxies)
-                {
-                    // Pool is empty but limit has not been reached, so we create a new entry.
-                    ret_val = std::shared_ptr<ReaderProxyData>(new ReaderProxyData(
-                            mp_RTPSParticipant->getAttributes().allocation.locators.max_unicast_locators,
-                            mp_RTPSParticipant->getAttributes().allocation.locators.max_multicast_locators),
-                        ReaderProxyData::pool_deleter());
-                    ++reader_proxies_number_;
-
-                    if(!ret_val)
-                    {
-                        return ret_val;
-                    }
-                }
-                else
-                {
-                    logWarning(RTPS_PDP, "Maximum number of reader proxies (" << max_proxies <<
-                        ") reached for participant " << mp_RTPSParticipant->getGuid() << std::endl);
-                    return nullptr;
-                }
-            }
-            else
-            {
-                // Pool is not empty, use entry from pool
-                ret_val.reset(reader_proxies_pool_.back(), ReaderProxyData::pool_deleter());
-                reader_proxies_pool_.pop_back();
-            }
-        }
+        return nullptr;
     }
 
     // Add to ParticipantProxy
@@ -887,6 +850,148 @@ std::shared_ptr<ReaderProxyData> PDP::addReaderProxyData(
     return ret_val;
 
  }
+
+std::shared_ptr<WriterProxyData> PDP::add_builtin_writer_proxy_data(
+    const WriterProxyData & wdata)
+{
+    // Check for a local copy
+    std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
+    std::shared_ptr<WriterProxyData> wpd;
+    ParticipantProxy * pp = nullptr;
+
+    for(ParticipantProxy* pit : participant_proxies_)
+    {
+        if(pit->get_guid_prefix() == wdata.guid().guidPrefix)
+        {
+            // Copy participant data to be used outside.
+            pp = pit;
+
+            // Check that it is not already there:
+            for(std::shared_ptr<WriterProxyData>& wit : pit->builtin_writers_)
+            {
+                if(wit->guid().entityId == wdata.guid().entityId)
+                {
+                    wpd = wit;
+                }
+            }
+        }
+    }
+
+    if(nullptr == pp)
+    {
+        // Unknown participant, nonsensical behaviour
+        assert(pp != nullptr);
+        return nullptr;
+    }
+
+    if(wpd)
+    {
+        // already there
+        return wpd;
+    }
+
+    // We need to add a local reference, assess if a global object is available
+    wpd = PDP::get_alived_writer_proxy(wdata.guid());
+    bool needs_copy = false;
+
+    if(!wpd)
+    {
+        // search into the readers pool
+        if(!(wpd = PDP::get_from_writer_proxy_pool(
+            wdata.guid(),
+            wdata.remote_locators().unicast.capacity(),
+            wdata.remote_locators().multicast.capacity())))
+        {
+            return nullptr;
+        }
+
+        // we need to copy it
+        needs_copy = true;
+    }
+
+    // Copy if needed, thats the first object and sync is not needed
+    if(needs_copy)
+    {
+        wpd->copy(&wdata);
+    }
+
+    // add to the local participant collection in order to keep the global
+    // object alive. Note that WriterProxies keep only weak references
+    pp->builtin_writers_.push_back(wpd);
+
+    return wpd;
+}
+
+std::shared_ptr<ReaderProxyData> PDP::add_builtin_reader_proxy_data(
+    const ReaderProxyData & wdata)
+{
+    // Check for a local copy
+    std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
+    std::shared_ptr<ReaderProxyData> rpd;
+    ParticipantProxy * pp = nullptr;
+
+    for(ParticipantProxy* pit : participant_proxies_)
+    {
+        if(pit->get_guid_prefix() == wdata.guid().guidPrefix)
+        {
+            // Copy participant data to be used outside.
+            pp = pit;
+
+            // Check that it is not already there:
+            for(std::shared_ptr<ReaderProxyData>& rit : pit->builtin_readers_)
+            {
+                if(rit->guid().entityId == wdata.guid().entityId)
+                {
+                    rpd = rit;
+                }
+            }
+        }
+    }
+
+    if(nullptr == pp)
+    {
+        // Unknown participant, nonsensical behaviour
+        assert(pp != nullptr);
+        return nullptr;
+    }
+
+    if(rpd)
+    {
+        // already there
+        return rpd;
+    }
+
+    // We need to add a local reference, assess if a global object is available
+    rpd = PDP::get_alived_reader_proxy(wdata.guid());
+    bool needs_copy = false;
+
+    if(!rpd)
+    {
+        // search into the readers pool
+        if(!(rpd = PDP::get_from_reader_proxy_pool(
+            wdata.guid(),
+            wdata.remote_locators().unicast.capacity(),
+            wdata.remote_locators().multicast.capacity())))
+        {
+            return nullptr;
+        }
+
+        // we need to copy it
+        needs_copy = true;
+    }
+
+    // Copy if needed, thats the first object and sync is not needed
+    if(needs_copy)
+    {
+        rpd->copy(&wdata);
+    }
+
+    // add to the local participant collection in order to keep the global
+    // object alive. Note that ReaderProxies keep only weak references
+    pp->builtin_readers_.push_back(rpd);
+
+    return rpd;
+}
 
 std::shared_ptr<WriterProxyData> PDP::addWriterProxyData(
     const GUID_t& writer_guid,
@@ -942,61 +1047,21 @@ std::shared_ptr<WriterProxyData> PDP::addWriterProxyData(
         }
     }
 
-    // participant associated must be ther
-    if(nullptr == pp)
+    // The participant must be there
+    assert(pp != nullptr && participant_guid != GUID_t::unknown());
+
+    // Get Participant allocation policies just in case we have to create a new one
+    const RTPSParticipantAttributes& part_att = getRTPSParticipant()->getRTPSParticipantAttributes();
+
+    // search into the readers pool
+    if(!(ret_val = PDP::get_from_writer_proxy_pool(
+        writer_guid,
+        part_att.allocation.locators.max_unicast_locators,
+        part_att.allocation.locators.max_multicast_locators)))
     {
         return nullptr;
     }
-
-    {
-        // The writer was locally unknown, we must nofity its discovery
-        std::lock_guard<std::recursive_mutex> pool_lock(pool_mutex_);
-
-        // See if somebody else knowns him, if so should be mapped
-        std::map<GUID_t, std::weak_ptr<WriterProxyData>>::iterator rit =
-            pool_writer_references_.find(writer_guid);
-
-        if(rit != pool_writer_references_.end())
-        {
-            // already there, create the reference
-            ret_val = rit->second.lock();
-        }
-        else
-        { 
-            // Newbie, try to take one entry from the pool
-            if (writer_proxies_pool_.empty())
-            {
-                size_t max_proxies = writer_proxies_pool_.max_size();
-                if (writer_proxies_number_ < max_proxies)
-                {
-                    // Pool is empty but limit has not been reached, so we create a new entry.
-                    ret_val = std::shared_ptr<WriterProxyData>(new WriterProxyData(
-                            mp_RTPSParticipant->getAttributes().allocation.locators.max_unicast_locators,
-                            mp_RTPSParticipant->getAttributes().allocation.locators.max_multicast_locators),
-                        WriterProxyData::pool_deleter());
-                    ++writer_proxies_number_;
-
-                    if(!ret_val)
-                    {
-                        return ret_val;
-                    }
-                }
-                else
-                {
-                    logWarning(RTPS_PDP, "Maximum number of writer proxies (" << max_proxies <<
-                        ") reached for participant " << mp_RTPSParticipant->getGuid() << std::endl);
-                    return nullptr;
-                }
-            }
-            else
-            {
-                // Pool is not empty, use entry from pool
-                ret_val.reset(writer_proxies_pool_.back(), WriterProxyData::pool_deleter());
-                writer_proxies_pool_.pop_back();
-            }
-        }
-    }
-
+ 
     // Add to ParticipantProxyData
     pp->writers_.push_back(ret_val);
 
@@ -1098,10 +1163,15 @@ bool PDP::remove_remote_participant(
         }
     }
 
-    if(mp_builtin->mp_WLP != nullptr)
-        mp_builtin->mp_WLP->removeRemoteEndpoints(pdata->proxy_data_.get());
-    mp_EDP->removeRemoteEndpoints(pdata->proxy_data_.get());
-    removeRemoteEndpoints(pdata->proxy_data_.get());
+    {
+        std::lock_guard<std::recursive_mutex> ppd_lock(pdata->get_ppd_mutex());
+
+        if(mp_builtin->mp_WLP != nullptr)
+            mp_builtin->mp_WLP->removeRemoteEndpoints(pdata->get_ppd().get());
+        mp_EDP->removeRemoteEndpoints(pdata->get_ppd().get());
+        removeRemoteEndpoints(pdata->get_ppd().get());
+
+    }
 
 #if HAVE_SECURITY
     mp_builtin->mp_participantImpl->security_manager().remove_participant(*pdata);
@@ -1131,7 +1201,7 @@ bool PDP::remove_remote_participant(
     }
 
     // By clearing the participant proxy we remove the strong references
-    // to the global reader and writer proxy data objects
+    // to the global reader and writer proxy data objects, besides the builtin proxies are clear
     pdata->clear();
 
     std::lock_guard<std::recursive_mutex> lock(*getMutex());
@@ -1312,7 +1382,7 @@ void PDP::remove_pool_resources()
 }
 
 /*static*/
-std::shared_ptr<ParticipantProxyData> PDP::get_from_proxy_pool(const GuidPrefix_t & guid)
+std::shared_ptr<ParticipantProxyData> PDP::get_alived_participant_proxy(const GuidPrefix_t & guid)
 {
     std::lock_guard<std::recursive_mutex> lock(pool_mutex_);
 
@@ -1326,6 +1396,146 @@ std::shared_ptr<ParticipantProxyData> PDP::get_from_proxy_pool(const GuidPrefix_
 
     // recreate shared_ptr from weak
     return it->second.lock();
+}
+
+//!Get ReaderProxyData from the pool if there, nullptr otherwise
+/*static*/
+std::shared_ptr<ReaderProxyData> PDP::get_alived_reader_proxy(const GUID_t & guid)
+{
+    std::lock_guard<std::recursive_mutex> lock(pool_mutex_);
+
+    auto it = pool_reader_references_.find(guid);
+
+    if(it == pool_reader_references_.end())
+    {
+        // nothing there
+        return std::shared_ptr<ReaderProxyData>();
+    }
+
+    // recreate shared_ptr from weak
+    return it->second.lock();
+}
+
+//!Get WriterProxyData from the pool if there, nullptr otherwise
+/*static*/
+std::shared_ptr<WriterProxyData> PDP::get_alived_writer_proxy(const GUID_t & guid)
+{
+    std::lock_guard<std::recursive_mutex> lock(pool_mutex_);
+
+    auto it = pool_writer_references_.find(guid);
+
+    if(it == pool_writer_references_.end())
+    {
+        // nothing there
+        return std::shared_ptr<WriterProxyData>();
+    }
+
+    // recreate shared_ptr from weak
+    return it->second.lock();
+}
+
+/*static*/ 
+std::shared_ptr<ReaderProxyData> PDP::get_from_reader_proxy_pool(
+    const GUID_t & guid,
+    const size_t max_unicast_locators,
+    const size_t max_multicast_locators)
+{
+    // first assess that is not alived
+    std::lock_guard<std::recursive_mutex> lock(pool_mutex_);
+
+    std::shared_ptr<ReaderProxyData> ret_val = get_alived_reader_proxy(guid);
+    bool add_reference = false;
+
+    if(!ret_val)
+    {
+        add_reference = true;
+
+        // Newbie, try to take one entry from the pool
+        if(reader_proxies_pool_.empty())
+        {
+            size_t max_proxies = reader_proxies_pool_.max_size();
+            if(reader_proxies_number_ < max_proxies)
+            {
+                // Pool is empty but limit has not been reached, so we create a new entry.
+                ret_val = std::shared_ptr<ReaderProxyData>(new ReaderProxyData(
+                    max_unicast_locators,
+                    max_multicast_locators),
+                    ReaderProxyData::pool_deleter());
+                ++reader_proxies_number_;
+            }
+            else
+            {
+                logWarning(RTPS_PDP, "Maximum number of reader proxies (" << max_proxies <<
+                    ") reached  " << std::endl);
+            }
+        }
+        else
+        {
+            // Pool is not empty, use entry from pool
+            ret_val.reset(reader_proxies_pool_.back(), ReaderProxyData::pool_deleter());
+            reader_proxies_pool_.pop_back();
+        }
+    }
+
+    // add reference if needed
+    if(ret_val && add_reference)
+    {
+        pool_reader_references_[guid] = ret_val;
+    }
+
+    return ret_val;
+}
+
+/*static*/
+std::shared_ptr<WriterProxyData> PDP::get_from_writer_proxy_pool(
+    const GUID_t & guid,
+    const size_t max_unicast_locators,
+    const size_t max_multicast_locators)
+{
+    // first assess that is not alived
+    std::lock_guard<std::recursive_mutex> lock(pool_mutex_);
+
+    std::shared_ptr<WriterProxyData> ret_val = get_alived_writer_proxy(guid);
+    bool add_reference = false;
+
+    if(!ret_val)
+    {
+        // Newbie, try to take one entry from the pool
+        add_reference = true;
+
+        if(writer_proxies_pool_.empty())
+        {
+            size_t max_proxies = writer_proxies_pool_.max_size();
+            if(writer_proxies_number_ < max_proxies)
+            {
+                // Pool is empty but limit has not been reached, so we create a new entry.
+                ret_val = std::shared_ptr<WriterProxyData>(new WriterProxyData(
+                    max_unicast_locators,
+                    max_multicast_locators),
+                    WriterProxyData::pool_deleter());
+                ++writer_proxies_number_;
+            }
+            else
+            {
+                logWarning(RTPS_PDP, "Maximum number of writer proxies (" << max_proxies <<
+                    ") reached" << std::endl);
+            }
+        }
+        else
+        {
+            // Pool is not empty, use entry from pool
+            ret_val.reset(writer_proxies_pool_.back(), WriterProxyData::pool_deleter());
+            writer_proxies_pool_.pop_back();
+        }
+    }
+
+    // add reference if needed
+    if(ret_val && add_reference)
+    {
+        pool_writer_references_[guid] = ret_val;
+    }
+
+    return ret_val;
 }
 
 std::shared_ptr<ParticipantProxyData> PDP::get_from_local_proxies(const GuidPrefix_t & guid)

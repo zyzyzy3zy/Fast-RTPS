@@ -66,7 +66,6 @@ class PDP
 {
     friend class PDPListener;
     friend class PDPServerListener;
-    friend class ParticipantProxyData;
 
 public:
     /**
@@ -139,7 +138,7 @@ public:
 
     /**
      * Add a WriterProxyData to the correct ParticipantProxyData.
-     * returns with the ParticipantProxyData locked if successful to prevern WriterProxyData corruption
+     * returns with the ParticipantProxyData locked if successful to prevent WriterProxyData corruption
      * @param [in]  writer_guid       GUID of the writer to add.
      * @param [out] participant_guid  GUID of the ParticipantProxyData where the writer was added.
      * @param [in]  initializer_func  Function to be called in order to set the data of the WriterProxyData.
@@ -150,6 +149,25 @@ public:
             const GUID_t& writer_guid,
             GUID_t& participant_guid,
             std::function<bool(WriterProxyData*, bool, const ParticipantProxyData&)> initializer_func);
+
+
+    /**
+     * Add a builtin WriterProxyData to the correct ParticipantProxyData.
+     * returns with the ParticipantProxyData locked if successful to prevent WriterProxyData corruption
+     * @param [in]  writer_guid temporary writer proxy data object
+     * @return A pointer to the added WriterProxyData (nullptr if it could not be added).
+     */
+    std::shared_ptr<WriterProxyData> PDP::add_builtin_writer_proxy_data(
+        const WriterProxyData & temp);
+
+    /**
+     * Add a builtin ReaderProxyData to the correct ParticipantProxyData.
+     * returns with the ParticipantProxyData locked if successful to prevent ReaderProxyData corruption
+     * @param [in]  reader_guid temporary writer proxy data object
+     * @return A pointer to the added ReaderProxyData (nullptr if it could not be added).
+     */
+    std::shared_ptr<ReaderProxyData> PDP::add_builtin_reader_proxy_data(
+        const ReaderProxyData & temp);
 
     /**
      * This method returns whether a ReaderProxyDataObject exists among the registered RTPSParticipants
@@ -440,7 +458,7 @@ protected:
      * @return pointer to the currently inserted entry, nullptr if allocation limits were reached.
      */
     ParticipantProxy* PDP::add_participant_proxy(
-        std::shared_ptr<ParticipantProxyData> ppd,
+        std::shared_ptr<ParticipantProxyData>& ppd,
         bool with_lease_duration = true);
 
     /**
@@ -463,11 +481,33 @@ private:
     //!Deallocation of common pool resources
     static void remove_pool_resources();
 
+public:
+
     //!Get ParticipantProxyData from the pool if there, nullptr otherwise
-    static std::shared_ptr<ParticipantProxyData> get_from_proxy_pool(const GuidPrefix_t & guid);
+    static std::shared_ptr<ParticipantProxyData> get_alived_participant_proxy(const GuidPrefix_t & guid);
+
+    //!Get ReaderProxyData actually in use, nullptr on failure
+    static std::shared_ptr<ReaderProxyData> get_alived_reader_proxy(const GUID_t & guid);
+
+    //!Get ReaderProxyData actually in use or a new one from the pool, nullptr on failure
+    static std::shared_ptr<ReaderProxyData> get_from_reader_proxy_pool(
+        const GUID_t & guid,
+        const size_t max_unicast_locators,
+        const size_t max_multicast_locator);
+
+    //!Get WriterProxyData actually in use, nullptr on failure
+    static std::shared_ptr<WriterProxyData> get_alived_writer_proxy(const GUID_t & guid);
+
+    //!Get WriterProxyData actually in use or a new one from the pool, nullptr on failure
+    static std::shared_ptr<WriterProxyData> get_from_writer_proxy_pool(
+        const GUID_t & guid,
+        const size_t max_unicast_locators,
+        const size_t max_multicast_locator);
 
     //!Get ParticipantProxyData from local collection, nullptr otherwise
     std::shared_ptr<ParticipantProxyData> get_from_local_proxies(const GuidPrefix_t & guid);
+
+private:
 
     //!TimedEvent to periodically resend the local RTPSParticipant information.
     TimedEvent* resend_participant_info_event_;

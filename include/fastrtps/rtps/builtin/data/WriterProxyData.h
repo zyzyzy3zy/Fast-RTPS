@@ -45,7 +45,8 @@ class ParticipantProxyData;
 /**
  **@ingroup BUILTIN_MODULE
  */
-class WriterProxyData
+class WriterProxyData 
+    : public std::enable_shared_from_this<WriterProxyData>
 {
 public:
 
@@ -371,7 +372,7 @@ public:
 
     //!Copy all information from another object.
     void copy(
-            WriterProxyData* wdata);
+            const WriterProxyData* wdata);
 
     //!Write as a parameter list on a CDRMessage_t
     bool writeToCDRMessage(
@@ -397,6 +398,33 @@ public:
     std::unique_lock<std::recursive_mutex> unique_lock() const
     {
         return std::unique_lock<std::recursive_mutex>(wpd_mutex_);
+    }
+
+    /**
+     * Returns a shared_ptr to an alive object if exists, that is,
+     * nullptr if is a temporary proxy
+    */
+    std::shared_ptr<WriterProxyData> get_alived_ptr() const
+    {
+        try
+        {
+            std::shared_ptr<WriterProxyData> aux =
+                const_cast<WriterProxyData*>(this)->shared_from_this();
+
+            // check if it's the pool shared_ptr by verifying the deleter
+            if(std::get_deleter<WriterProxyData::pool_deleter>(aux))
+            {
+                return aux;
+            }
+
+            // is associated to a non-pool shared_ptr
+        }
+        catch(const std::bad_weak_ptr& )
+        {
+            // is a temporary object
+        }
+
+        return nullptr;
     }
 
     /**

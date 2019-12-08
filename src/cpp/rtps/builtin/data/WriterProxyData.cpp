@@ -703,7 +703,7 @@ void WriterProxyData::clear()
 }
 
 void WriterProxyData::copy(
-        WriterProxyData* wdata)
+        const WriterProxyData* wdata)
 {
     m_guid = wdata->m_guid;
     remote_locators_ = wdata->remote_locators_;

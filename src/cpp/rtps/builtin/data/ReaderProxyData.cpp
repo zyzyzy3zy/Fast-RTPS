@@ -726,7 +726,7 @@ void ReaderProxyData::update(
 }
 
 void ReaderProxyData::copy(
-        ReaderProxyData* rdata)
+       const ReaderProxyData* rdata)
 {
     m_guid = rdata->m_guid;
     remote_locators_ = rdata->remote_locators_;

@@ -118,6 +118,12 @@ private:
     //! hard reference to the global WriterProxyDatas this participant is aware of
     ResourceLimitedVector<std::shared_ptr<WriterProxyData>> writers_;
 
+    //! hard reference to the global builtin ReaderProxyDatas this participant is aware of
+    ResourceLimitedVector<std::shared_ptr<ReaderProxyData>> builtin_readers_;
+
+    //! hard reference to the global builtin WriterProxyDatas this participant is aware of
+    ResourceLimitedVector<std::shared_ptr<WriterProxyData>> builtin_writers_;
+
     // Lease duration event for the PDP callbacks
     TimedEvent* lease_duration_event_;
     

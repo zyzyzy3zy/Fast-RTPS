@@ -375,9 +375,9 @@ void PDPSimple::assignRemoteEndpoints(ParticipantProxyData* pdata)
         temp_writer_data_.m_qos.m_reliability.kind = BEST_EFFORT_RELIABILITY_QOS;
         temp_writer_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
 
-        pdata->ppd_mutex_.unlock(); // proper acquisition order PDP Reader -> ppd
-        mp_PDPReader->matched_writer_add(temp_writer_data_);
-        pdata->ppd_mutex_.lock();
+        // add this to the participant builtin writers collection
+        auto wp = add_builtin_writer_proxy_data(temp_writer_data_);
+        mp_PDPReader->matched_writer_add(*wp);
     }
     auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PARTICIPANT_DETECTOR;
@@ -392,9 +392,9 @@ void PDPSimple::assignRemoteEndpoints(ParticipantProxyData* pdata)
         temp_reader_data_.m_qos.m_reliability.kind = BEST_EFFORT_RELIABILITY_QOS;
         temp_reader_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
 
-        pdata->ppd_mutex_.unlock(); // proper acquisition order PDP Reader -> ppd
-        mp_PDPWriter->matched_reader_add(temp_reader_data_);
-        pdata->ppd_mutex_.lock();
+        // add this to the participant builtin readers collection
+        auto rp = add_builtin_reader_proxy_data(temp_reader_data_);
+        mp_PDPWriter->matched_reader_add(*rp);
     }
 
 #if HAVE_SECURITY

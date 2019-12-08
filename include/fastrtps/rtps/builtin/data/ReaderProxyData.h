@@ -42,11 +42,12 @@ struct CDRMessage_t;
 class NetworkFactory;
 
 /**
- * Class ReaderProxyData, used to represent all the information on a Reader (both local and remote) with the purpose of
+ * Class WriterProxyData, used to represent all the information on a Reader (both local and remote) with the purpose of
  * implementing the discovery.
  * @ingroup BUILTIN_MODULE
  */
 class ReaderProxyData
+    : public std::enable_shared_from_this<ReaderProxyData>
 {
 public:
 
@@ -374,7 +375,7 @@ public:
      * @param rdata Pointer to the object from where the information must be copied.
      */
     void copy(
-            ReaderProxyData* rdata);
+            const ReaderProxyData* rdata);
 
     void lock() const
     {
@@ -390,6 +391,33 @@ public:
     std::unique_lock<std::recursive_mutex> unique_lock() const
     {
         return std::unique_lock<std::recursive_mutex>(rpd_mutex_);
+    }
+
+    /**
+     * Returns a shared_ptr to an alive object if exists, that is,
+     * nullptr if is a temporary proxy
+    */
+    std::shared_ptr<ReaderProxyData> get_alived_ptr() const
+    {
+        try
+        {
+            std::shared_ptr<ReaderProxyData> aux =
+                const_cast<ReaderProxyData*>(this)->shared_from_this();
+
+            // check if it's the pool shared_ptr by verifying the deleter
+            if(std::get_deleter<ReaderProxyData::pool_deleter>(aux))
+            {
+                return aux;
+            }
+
+            // is associated to a non-pool shared_ptr
+        }
+        catch(const std::bad_weak_ptr& )
+        {
+            // is a temporary object
+        }
+
+        return nullptr;
     }
 
     /**

@@ -27,6 +27,8 @@
 #include <fastrtps/utils/TimeConversion.h>
 #include "../history/HistoryAttributesExtension.hpp"
 
+#include <fastrtps/rtps/builtin/discovery/participant/PDP.h>
+
 #include <fastrtps/rtps/builtin/BuiltinProtocols.h>
 #include <fastrtps/rtps/builtin/liveliness/WLP.h>
 #include <fastrtps/rtps/writer/LivelinessManager.h>
@@ -92,6 +94,16 @@ bool StatefulReader::matched_writer_add(
 {
     assert(wdata.guid() != c_Guid_Unknown);
 
+    // make sure the wdata has already a global object linked
+    std::shared_ptr<WriterProxyData> wpd = wdata.get_alived_ptr();
+
+    if(!wpd)
+    {
+        assert(!!wpd); // initialization and listeners must register the global object
+
+        return false;
+    }
+
     std::lock_guard<RecursiveTimedMutex> guard(mp_mutex);
 
     if (!is_alive_)
@@ -105,8 +117,13 @@ bool StatefulReader::matched_writer_add(
     {
         if (it->guid() == wdata.guid())
         {
+            // prevent changes when updating
+            auto wpd_lock = wpd->unique_lock();
+
             logInfo(RTPS_READER, "Attempting to add existing writer, updating information");
             it->update(wdata);
+            wpd_lock.unlock();
+
             if (!is_same_process)
             {
                 for (const Locator_t& locator : it->remote_locators_shrinked())
@@ -141,21 +158,21 @@ bool StatefulReader::matched_writer_add(
         matched_writers_pool_.pop_back();
     }
 
-    if (!is_same_process)
-    {
-        for (const Locator_t& locator : wp->remote_locators_shrinked())
-        {
-            getRTPSParticipant()->createSenderResources(locator);
-        }
-    }
-
     SequenceNumber_t initial_sequence;
     add_persistence_guid(wdata.guid(), wdata.persistence_guid());
     initial_sequence = get_last_notified(wdata.guid());
 
-    wp->start(wdata, initial_sequence);
+    wp->start(wpd, initial_sequence);
 
     matched_writers_.push_back(wp);
+
+    if(!is_same_process)
+    {
+        for(const Locator_t& locator : wp->remote_locators_shrinked())
+        {
+            getRTPSParticipant()->createSenderResources(locator);
+        }
+    }
 
     if (liveliness_lease_duration_ < c_TimeInfinite)
     {

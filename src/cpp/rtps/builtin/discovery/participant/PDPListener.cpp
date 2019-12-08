@@ -107,7 +107,7 @@ void PDPListener::onNewCacheChangeAdded(
         // 2- If not found search in the pool (maybe other participant created it)
         if(!pdata)
         {
-            pdata = PDP::get_from_proxy_pool(guid.guidPrefix);
+            pdata = PDP::get_alived_participant_proxy(guid.guidPrefix);
         }
 
         // 3 - Deserialize if needed

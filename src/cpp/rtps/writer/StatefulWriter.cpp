@@ -22,6 +22,8 @@
 #include <fastrtps/rtps/writer/ReaderProxy.h>
 #include <fastrtps/rtps/resources/AsyncWriterThread.h>
 
+#include <fastrtps/rtps/builtin/discovery/participant/PDP.h>
+
 #include "../participant/RTPSParticipantImpl.h"
 #include "../flowcontrol/FlowController.h"
 
@@ -875,6 +877,15 @@ bool StatefulWriter::matched_reader_add(
         return false;
     }
 
+    // make sure the wdata has already a global object linked
+    std::shared_ptr<ReaderProxyData> rpd = rdata.get_alived_ptr();
+
+    if(!rpd)
+    {
+        assert(!!rpd); // initialization and listeners must register the global object
+        return false;
+    }
+
     std::lock_guard<RecursiveTimedMutex> guard(mp_mutex);
 
     // Check if it is already matched.
@@ -915,7 +926,7 @@ bool StatefulWriter::matched_reader_add(
     }
 
     // Add info of new datareader.
-    rp->start(rdata);
+    rp->start(rpd);
     locator_selector_.add_entry(rp->locator_selector_entry());
     update_reader_info(true);
 

@@ -31,7 +31,20 @@ ParticipantProxy::ParticipantProxy(const RTPSParticipantAllocationAttributes& al
     , should_check_lease_duration_(false)
     , readers_(allocation.readers)
     , writers_(allocation.writers)
+    , builtin_readers_(allocation.participants) 
+    , builtin_writers_(allocation.participants
+    )
 {
+    // TODO: Barro, increase on security case
+    ResourceLimitedContainerConfig builtin;
+    builtin.initial = 8 * allocation.participants.increment;
+    builtin.maximum = 8 * allocation.participants.maximum;
+    builtin.increment = 8 * allocation.participants.increment;
+
+    builtin_readers_ =
+        ResourceLimitedVector<std::shared_ptr<ReaderProxyData>>(builtin);
+    builtin_writers_ =
+        ResourceLimitedVector<std::shared_ptr<WriterProxyData>>(builtin);
 }
 
 ParticipantProxy::~ParticipantProxy()
@@ -46,6 +59,8 @@ void ParticipantProxy::clear()
 {
     readers_.clear();
     writers_.clear();
+    builtin_readers_.clear();
+    builtin_writers_.clear();
 
     // Cancel lease event
     if(lease_duration_event_ != nullptr)

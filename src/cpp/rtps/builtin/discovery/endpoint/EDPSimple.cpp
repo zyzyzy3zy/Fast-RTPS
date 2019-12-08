@@ -671,9 +671,6 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
     temp_writer_proxy_data_.m_qos.m_durability.kind = TRANSIENT_LOCAL_DURABILITY_QOS;
     temp_writer_proxy_data_.m_qos.m_reliability.kind = RELIABLE_RELIABILITY_QOS;
 
-    // unlock the ParticipantProxyData mutex before locking on edp ones for matching
-    pdata.ppd_mutex_.unlock();
-
     //FIXME: FIX TO NOT FAIL WITH BAD BUILTIN ENDPOINT SET
     //auxendp = 1;
     if(auxendp!=0 && publications_reader_.first!=nullptr) //Exist Pub Writer and i have pub reader
@@ -681,7 +678,11 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
         logInfo(RTPS_EDP,"Adding SEDP Pub Writer to my Pub Reader");
         temp_writer_proxy_data_.guid().entityId = c_EntityId_SEDPPubWriter;
         temp_writer_proxy_data_.set_persistence_entity_id(c_EntityId_SEDPPubWriter);
-        publications_reader_.first->matched_writer_add(temp_writer_proxy_data_);
+
+        std::shared_ptr<WriterProxyData> wp = 
+            mp_PDP->add_builtin_writer_proxy_data(temp_writer_proxy_data_);
+
+        publications_reader_.first->matched_writer_add(*wp);
     }
     auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PUBLICATION_DETECTOR;
@@ -691,7 +692,11 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
     {
         logInfo(RTPS_EDP,"Adding SEDP Pub Reader to my Pub Writer");
         temp_reader_proxy_data_.guid().entityId = c_EntityId_SEDPPubReader;
-        publications_writer_.first->matched_reader_add(temp_reader_proxy_data_);
+
+        std::shared_ptr<ReaderProxyData> rp =
+            mp_PDP->add_builtin_reader_proxy_data(temp_reader_proxy_data_);
+
+        publications_writer_.first->matched_reader_add(*rp);
     }
     auxendp = endp;
     auxendp &= DISC_BUILTIN_ENDPOINT_SUBSCRIPTION_ANNOUNCER;
@@ -702,7 +707,11 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
         logInfo(RTPS_EDP,"Adding SEDP Sub Writer to my Sub Reader");
         temp_writer_proxy_data_.guid().entityId = c_EntityId_SEDPSubWriter;
         temp_writer_proxy_data_.set_persistence_entity_id(c_EntityId_SEDPSubWriter);
-        subscriptions_reader_.first->matched_writer_add(temp_writer_proxy_data_);
+
+        std::shared_ptr<WriterProxyData> wp =
+            mp_PDP->add_builtin_writer_proxy_data(temp_writer_proxy_data_);
+
+        subscriptions_reader_.first->matched_writer_add(*wp);
     }
     auxendp = endp;
     auxendp &= DISC_BUILTIN_ENDPOINT_SUBSCRIPTION_DETECTOR;
@@ -712,7 +721,11 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
     {
         logInfo(RTPS_EDP,"Adding SEDP Sub Reader to my Sub Writer");
         temp_reader_proxy_data_.guid().entityId = c_EntityId_SEDPSubReader;
-        subscriptions_writer_.first->matched_reader_add(temp_reader_proxy_data_);
+
+        std::shared_ptr<ReaderProxyData> rp =
+            mp_PDP->add_builtin_reader_proxy_data(temp_reader_proxy_data_);
+
+        subscriptions_writer_.first->matched_reader_add(*rp);
     }
 
 #if HAVE_SECURITY
@@ -785,9 +798,6 @@ void EDPSimple::assignRemoteEndpoints(const ParticipantProxyData& pdata)
         }
     }
 #endif
-
-    // relock the pdp mutex
-    pdata.ppd_mutex_.lock();
 }
 
 void EDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
@@ -801,7 +811,7 @@ void EDPSimple::removeRemoteEndpoints(ParticipantProxyData* pdata)
     uint32_t auxendp = endp;
     auxendp &=DISC_BUILTIN_ENDPOINT_PUBLICATION_ANNOUNCER;
 
-    pdata->ppd_mutex_.unlock();
+    pdata->ppd_mutex_.unlock(); 
 
     //FIXME: FIX TO NOT FAIL WITH BAD BUILTIN ENDPOINT SET
     //auxendp = 1;

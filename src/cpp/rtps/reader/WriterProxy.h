@@ -73,11 +73,11 @@ public:
 
     /**
      * Activate this proxy associating it to a remote writer.
-     * @param attributes WriterProxyData of the writer for which to keep state.
+     * @param attributes shared_ptr to WriterProxyData of the writer for which to keep state.
      * @param initial_sequence Sequence number of last acknowledged change.
      */
     void start(
-            const WriterProxyData& attributes,
+            std::shared_ptr<WriterProxyData>& attributes,
             const SequenceNumber_t& initial_sequence);
 
     /**

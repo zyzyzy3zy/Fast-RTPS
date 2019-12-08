@@ -79,7 +79,8 @@ class PDP;
 * ParticipantProxyData class is used to store and convert the information Participants send to each other during the PDP phase.
 *@ingroup BUILTIN_MODULE
 */
-class ParticipantProxyData 
+class ParticipantProxyData
+    : public std::enable_shared_from_this<ParticipantProxyData>
 {
     public:
 
