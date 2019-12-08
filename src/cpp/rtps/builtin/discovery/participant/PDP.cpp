@@ -182,21 +182,21 @@ ParticipantProxy* PDP::add_participant_proxy(
 
             ++participant_proxies_number_;
         }
-        else
-        {
-            // Pool is not empty, use entry from pool
-            ret_val = participant_proxies_pool_.back();
-            participant_proxies_pool_.pop_back();
-        }
-
-        // associate the local object with the global one
-        ret_val->set_ppd(std::move(ppd));
-        // update lease duration properties
-        ret_val->should_check_lease_duration_ = with_lease_duration;
-        // add to the local collection
-        participant_proxies_.push_back(ret_val);
+    }
+    else
+    {
+        // Pool is not empty, use entry from pool
+        ret_val = participant_proxies_pool_.back();
+        participant_proxies_pool_.pop_back();
     }
 
+    // associate the local object with the global one
+    ret_val->set_ppd(std::move(ppd));
+    // update lease duration properties
+    ret_val->should_check_lease_duration_ = with_lease_duration;
+    // add to the local collection
+    participant_proxies_.push_back(ret_val);
+    
     ppd_lock.release(); // on sucess returns with the ppd lock owned
     return ret_val;
 }
