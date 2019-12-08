@@ -376,6 +376,16 @@ public:
     void copy(
             ReaderProxyData* rdata);
 
+    void lock() const
+    {
+        rpd_mutex_.lock();
+    }
+
+    void unlock() const
+    {
+        rpd_mutex_.unlock();
+    }
+
     //! Returns a lock object 
     std::unique_lock<std::recursive_mutex> unique_lock() const
     {

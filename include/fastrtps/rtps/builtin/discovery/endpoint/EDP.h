@@ -178,9 +178,9 @@ class EDP
         bool unpairReaderProxy(const GUID_t& participant_guid, const GUID_t& reader_guid);
 
         /**
-         * Try to pair/unpair ReaderProxyData.
+         * Try to pair/unpair ReaderProxyData. 
          * @param participant_guid Identifier of the participant.
-         * @param rdata Pointer to the ReaderProxyData object.
+         * @param rdata Pointer to the ReaderProxyData object. Must be locked.
          * @return True.
          */
         bool pairing_reader_proxy_with_any_local_writer(const GUID_t& participant_guid, ReaderProxyData* rdata);
@@ -196,7 +196,7 @@ class EDP
         /**
          * Try to pair/unpair WriterProxyData.
          * @param participant_guid Identifier of the participant.
-         * @param wdata Pointer to the WriterProxyData.
+         * @param wdata Pointer to the WriterProxyData. Must be locked.
          * @return True.
          */
         bool pairing_writer_proxy_with_any_local_reader(const GUID_t& participant_guid, WriterProxyData* wdata);

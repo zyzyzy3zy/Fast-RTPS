@@ -63,6 +63,7 @@ public:
     /**
      * Constructor.
      * @param reader Pointer to the StatefulReader creating this proxy.
+     * @param wpd shared_ptr to the WriterProxyData object
      * @param changes_allocation Configuration for the set of Change
      */
     WriterProxy(
@@ -159,11 +160,13 @@ public:
 
     /**
      * Get the attributes of the writer represented by this proxy.
-     * @return const reference to the attributes of the writer represented by this proxy.
+     * @return shared_ptr to the attributes of the writer represented by this proxy.
      */
-    inline const WriterProxyData& attributes() const
+    std::shared_ptr<WriterProxyData> get_attributes() const
     {
-        return attributes_;
+        // ReaderProxy uses a weak_ptr because the liveliness
+        // is managed from the ParticipantProxy strong reference
+        return writer_attributes_.lock();
     }
 
     /**
@@ -172,7 +175,7 @@ public:
      */
     inline const GUID_t& guid() const
     {
-        return attributes_.guid();
+        return get_attributes()->guid();
     }
 
     /**
@@ -181,7 +184,7 @@ public:
      */
     inline uint32_t ownership_strength() const
     {
-        return attributes_.m_qos.m_ownershipStrength.value;
+        return get_attributes()->m_qos.m_ownershipStrength.value;
     }
 
     /**
@@ -190,6 +193,9 @@ public:
      */
     inline const ResourceLimitedVector<Locator_t>& remote_locators_shrinked() const
     {
+        auto wpd = get_attributes();
+        WriterProxyData & attributes_ = *wpd;
+
         return attributes_.remote_locators().unicast.empty() ?
                attributes_.remote_locators().multicast :
                attributes_.remote_locators().unicast;
@@ -339,7 +345,7 @@ private:
     //! Pointer to associated StatefulReader.
     StatefulReader* reader_;
     //! Parameters of the WriterProxy
-    std::weak_ptr<WriterProxyData> attributes_;
+    std::weak_ptr<WriterProxyData> writer_attributes_;
     //!Timed event to postpone the heartbeatResponse.
     TimedEvent* heartbeat_response_;
     //! Timed event to send initial acknack.

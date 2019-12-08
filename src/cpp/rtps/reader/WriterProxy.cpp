@@ -60,7 +60,6 @@ WriterProxy::WriterProxy(
         const RemoteLocatorsAllocationAttributes& loc_alloc,
         const ResourceLimitedContainerConfig& changes_allocation)
     : reader_(reader)
-    , attributes_(loc_alloc.max_unicast_locators, loc_alloc.max_multicast_locators)
     , heartbeat_response_(nullptr)
     , initial_acknack_(nullptr)
     , last_heartbeat_count_(0)
@@ -74,6 +73,8 @@ WriterProxy::WriterProxy(
     , guid_prefix_as_vector_(ResourceLimitedContainerConfig::fixed_size_configuration(1u))
     , is_on_same_process_(false)
 {
+    (void)loc_alloc;
+
     //Create Events
     heartbeat_response_ =
         new TimedEvent(reader_->getRTPSParticipant()->getEventResource(),
@@ -107,11 +108,11 @@ void WriterProxy::start(
     heartbeat_response_->update_interval(reader_->getTimes().heartbeatResponseDelay);
     initial_acknack_->update_interval(reader_->getTimes().initialAcknackDelay);
 
-    attributes_ = attributes;
-    guid_as_vector_.push_back(attributes_.guid());
-    guid_prefix_as_vector_.push_back(attributes_.guid().guidPrefix);
+    *get_attributes() = attributes;
+    guid_as_vector_.push_back(attributes.guid());
+    guid_prefix_as_vector_.push_back(attributes.guid().guidPrefix);
     is_alive_ = true;
-    is_on_same_process_ = RTPSDomainImpl::should_intraprocess_between(reader_->getGuid(), attributes_.guid());
+    is_on_same_process_ = RTPSDomainImpl::should_intraprocess_between(reader_->getGuid(), attributes.guid());
 
     initial_acknack_->restart_timer();
     loaded_from_storage(initial_sequence);
@@ -125,7 +126,7 @@ void WriterProxy::update(
 #endif
 
     assert(is_alive_);
-    attributes_ = attributes;
+    *get_attributes() = attributes;
 }
 
 void WriterProxy::stop()
@@ -139,7 +140,7 @@ void WriterProxy::stop()
 void WriterProxy::clear()
 {
     is_alive_ = false;
-    attributes_.guid(c_Guid_Unknown);
+    get_attributes()->guid(c_Guid_Unknown);
     last_heartbeat_count_ = 0;
     heartbeat_final_flag_.store(false);
     guid_as_vector_.clear();
@@ -164,7 +165,7 @@ void WriterProxy::missing_changes_update(
     assert(get_mutex_owner() == get_thread_id());
 #endif
 
-    logInfo(RTPS_READER, attributes_.guid().entityId << ": changes up to seq_num: " << seq_num << " missing.");
+    logInfo(RTPS_READER, get_attributes()->guid().entityId << ": changes up to seq_num: " << seq_num << " missing.");
 
     // Check was not removed from container.
     if (seq_num > changes_from_writer_low_mark_)
@@ -183,7 +184,7 @@ void WriterProxy::lost_changes_update(
     assert(get_mutex_owner() == get_thread_id());
 #endif
 
-    logInfo(RTPS_READER, attributes_.guid().entityId << ": up to seq_num: " << seq_num);
+    logInfo(RTPS_READER, get_attributes()->guid().entityId << ": up to seq_num: " << seq_num);
 
     // Check was not removed from container.
     if (seq_num > changes_from_writer_low_mark_)
@@ -207,7 +208,7 @@ void WriterProxy::lost_changes_update(
 bool WriterProxy::received_change_set(
         const SequenceNumber_t& seq_num)
 {
-    logInfo(RTPS_READER, attributes_.guid().entityId << ": seq_num: " << seq_num);
+    logInfo(RTPS_READER, get_attributes()->guid().entityId << ": seq_num: " << seq_num);
     return received_change_set(seq_num, true);
 }
 
@@ -463,11 +464,11 @@ void WriterProxy::perform_initial_ack_nack() const
     SequenceNumberSet_t sns(SequenceNumber_t(0, 0));
     if (is_on_same_process_)
     {
-        RTPSWriter* writer = RTPSDomainImpl::find_local_writer(attributes_.guid());
+        RTPSWriter* writer = RTPSDomainImpl::find_local_writer(get_attributes()->guid());
         if (writer)
         {
             bool tmp;
-            writer->process_acknack(attributes_.guid(), reader_->getGuid(), 1, SequenceNumberSet_t(), false, tmp);
+            writer->process_acknack(get_attributes()->guid(), reader_->getGuid(), 1, SequenceNumberSet_t(), false, tmp);
         }
     }
     else

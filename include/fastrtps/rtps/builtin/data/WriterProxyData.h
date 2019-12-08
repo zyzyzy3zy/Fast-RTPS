@@ -383,6 +383,16 @@ public:
             CDRMessage_t* msg,
             const NetworkFactory& network);
 
+    void lock() const
+    {
+        wpd_mutex_.lock();
+    }
+
+    void unlock() const
+    {
+        wpd_mutex_.unlock();
+    }
+
     //!returns a lock to protect the object
     std::unique_lock<std::recursive_mutex> unique_lock() const
     {

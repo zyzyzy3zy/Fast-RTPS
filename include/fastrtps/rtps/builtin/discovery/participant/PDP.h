@@ -169,6 +169,14 @@ public:
     bool lookupReaderProxyData(
             const GUID_t& reader,
             ReaderProxyData& rdata);
+ 
+    /**
+     * This method returns a strong reference to the ReaderProxyData object look for.
+     * @param [in] reader GUID_t of the ReaderProxyData we want to pick up
+     * @return ReaderProxyData if found.
+     */
+    std::shared_ptr<ReaderProxyData> PDP::lookupReaderProxyData(
+        const GUID_t& reader);
 
     /**
      * This method returns whether a WriterProxyData exists among the registered RTPSParticipants
@@ -188,6 +196,14 @@ public:
     bool lookupWriterProxyData(
             const GUID_t& writer,
             WriterProxyData& wdata);
+
+    /**
+     * This method returns a strong reference to the WriterProxyData object look for.
+     * @param [in] writer GUID_t of the WriterProxyData we want to pick up
+     * @return WriterProxyData if found.
+     */
+    std::shared_ptr<WriterProxyData> PDP::lookupWriterProxyData(
+            const GUID_t& writer);
 
     /**
      * This method returns the name of a participant if it is found among the registered RTPSParticipants.

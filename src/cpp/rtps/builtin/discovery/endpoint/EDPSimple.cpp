@@ -182,12 +182,12 @@ void EDPSimple::set_builtin_reader_attributes(ReaderAttributes& attributes)
 
     // Locators are copied from the local participant metatraffic locators
     attributes.endpoint.unicastLocatorList.clear();
-    for (const Locator_t& loc : this->mp_PDP->getLocalParticipantProxyData()->metatraffic_locators.unicast)
+    for (const Locator_t& loc : mp_PDP->getLocalParticipantProxy()->get_ppd()->metatraffic_locators.unicast)
     {
         attributes.endpoint.unicastLocatorList.push_back(loc);
     }
     attributes.endpoint.multicastLocatorList.clear();
-    for (const Locator_t& loc : this->mp_PDP->getLocalParticipantProxyData()->metatraffic_locators.multicast)
+    for (const Locator_t& loc : mp_PDP->getLocalParticipantProxy()->get_ppd()->metatraffic_locators.multicast)
     {
         attributes.endpoint.multicastLocatorList.push_back(loc);
     }
@@ -223,12 +223,12 @@ void EDPSimple::set_builtin_writer_attributes(WriterAttributes& attributes)
 
     // Locators are copied from the local participant metatraffic locators
     attributes.endpoint.unicastLocatorList.clear();
-    for (const Locator_t& loc : this->mp_PDP->getLocalParticipantProxyData()->metatraffic_locators.unicast)
+    for (const Locator_t& loc : mp_PDP->getLocalParticipantProxy()->get_ppd()->metatraffic_locators.unicast)
     {
         attributes.endpoint.unicastLocatorList.push_back(loc);
     }
     attributes.endpoint.multicastLocatorList.clear();
-    for (const Locator_t& loc : this->mp_PDP->getLocalParticipantProxyData()->metatraffic_locators.multicast)
+    for (const Locator_t& loc : mp_PDP->getLocalParticipantProxy()->get_ppd()->metatraffic_locators.multicast)
     {
         attributes.endpoint.multicastLocatorList.push_back(loc);
     }

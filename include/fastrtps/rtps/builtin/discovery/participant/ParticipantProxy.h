@@ -35,6 +35,7 @@ namespace rtps {
 class ParticipantProxy
 {
     friend class PDP;
+    friend class EDP;
 
 public:
 

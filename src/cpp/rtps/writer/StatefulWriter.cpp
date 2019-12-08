@@ -1036,9 +1036,9 @@ bool StatefulWriter::matched_reader_add(
 
     matched_readers_.push_back(rp);
 
-    logInfo(RTPS_WRITER, "Reader Proxy " << rp->guid() << " added to " << this->m_guid.entityId << " with "
-                                         << rp->reader_attributes().remote_locators().unicast.size() << "(u)-"
-                                         << rp->reader_attributes().remote_locators().multicast.size() <<
+    logInfo(RTPS_WRITER, "Reader Proxy " << rp->guid() << " added to " << m_guid.entityId << " with "
+                                         << rp->get_attributes()->remote_locators().unicast.size() << "(u)-"
+                                         << rp->get_attributes()->remote_locators().multicast.size() <<
             "(m) locators");
 
     return true;
@@ -1653,7 +1653,7 @@ bool StatefulWriter::ack_timer_expired()
     {
         for (ReaderProxy* remote_reader : matched_readers_)
         {
-            if (remote_reader->reader_attributes().disable_positive_acks())
+            if (remote_reader->get_attributes()->disable_positive_acks())
             {
                 remote_reader->acked_changes_set(last_sequence_number_ + 1);
             }

@@ -610,6 +610,46 @@ bool PDP::lookupWriterProxyData(const GUID_t& writer, WriterProxyData& wdata)
     return false;
 }
 
+std::shared_ptr<WriterProxyData> PDP::lookupWriterProxyData(const GUID_t& writer)
+{
+    std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
+
+    for(ParticipantProxy* pit : participant_proxies_)
+    {
+        if(pit->get_guid_prefix() == writer.guidPrefix)
+        {
+            for(std::shared_ptr<WriterProxyData>& wit : pit->writers_)
+            {
+                if(wit->guid() == writer)
+                {
+                    return wit;
+                }
+            }
+        }
+    }
+    return std::shared_ptr<WriterProxyData>();
+}
+
+std::shared_ptr<ReaderProxyData> PDP::lookupReaderProxyData(const GUID_t& reader)
+{
+    std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
+
+    for(ParticipantProxy* pit : participant_proxies_)
+    {
+        if(pit->get_guid_prefix() == reader.guidPrefix)
+        {
+            for(std::shared_ptr<ReaderProxyData>& rit : pit->readers_)
+            {
+                if(rit->guid() == reader)
+                {
+                    return rit;
+                }
+            }
+        }
+    }
+    return std::shared_ptr<ReaderProxyData>();
+}
+
 bool PDP::removeReaderProxyData(const GUID_t& reader_guid)
 {
     logInfo(RTPS_PDP, "Removing reader proxy data " << reader_guid);

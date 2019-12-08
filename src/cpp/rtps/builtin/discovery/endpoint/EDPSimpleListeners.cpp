@@ -48,6 +48,8 @@ void EDPBasePUBListener::add_writer_from_change(
         CacheChange_t* change,
         EDP* edp)
 {
+    // TODO IMPLEMENT VERSION MECHANISM TO AVOID USELESS DESERIALIZATION
+
     //LOAD INFORMATION IN DESTINATION WRITER PROXY DATA
     const NetworkFactory& network = edp->mp_RTPSParticipant->network_factory();
     CDRMessage_t tempMsg(change->serializedPayload);
@@ -80,14 +82,14 @@ void EDPBasePUBListener::add_writer_from_change(
         };
 
         GUID_t participant_guid;
-        WriterProxyData* writer_data =
+        std::shared_ptr<WriterProxyData> writer_data =
             edp->mp_PDP->addWriterProxyData(temp_writer_data_.guid(), participant_guid, copy_data_fun);
-        if (writer_data != nullptr)
+        if (writer_data)
         {
             // At this point we can release reader lock, cause change is not used
             reader->getMutex().unlock();
 
-            edp->pairing_writer_proxy_with_any_local_reader(participant_guid, writer_data);
+            edp->pairing_writer_proxy_with_any_local_reader(participant_guid, writer_data.get());
 
             // Take again the reader lock.
             reader->getMutex().lock();
@@ -149,6 +151,8 @@ void EDPBaseSUBListener::add_reader_from_change(
         CacheChange_t* change,
         EDP* edp)
 {
+    // TODO IMPLEMENT VERSION MECHANISM TO AVOID USELESS DESERIALIZATION
+
     //LOAD INFORMATION IN TEMPORAL WRITER PROXY DATA
     const NetworkFactory& network = edp->mp_RTPSParticipant->network_factory();
     CDRMessage_t tempMsg(change->serializedPayload);
@@ -181,14 +185,14 @@ void EDPBaseSUBListener::add_reader_from_change(
 
         //LOOK IF IS AN UPDATED INFORMATION
         GUID_t participant_guid;
-        ReaderProxyData* reader_data =
+        std::shared_ptr<ReaderProxyData> reader_data =
             edp->mp_PDP->addReaderProxyData(temp_reader_data_.guid(), participant_guid, copy_data_fun);
         if (reader_data != nullptr) //ADDED NEW DATA
         {
             // At this point we can release reader lock, cause change is not used
             reader->getMutex().unlock();
 
-            edp->pairing_reader_proxy_with_any_local_writer(participant_guid, reader_data);
+            edp->pairing_reader_proxy_with_any_local_writer(participant_guid, reader_data.get());
 
             // Take again the reader lock.
             reader->getMutex().lock();

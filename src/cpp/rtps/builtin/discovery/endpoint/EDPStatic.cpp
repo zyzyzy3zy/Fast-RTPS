@@ -108,7 +108,8 @@ bool EDPStatic::processLocalReaderProxyData(RTPSReader*, ReaderProxyData* rdata)
     logInfo(RTPS_EDP,rdata->guid().entityId<< " in topic: " <<rdata->topicName());
     mp_PDP->getMutex()->lock();
     //Add the property list entry to our local pdp
-    std::shared_ptr<ParticipantProxyData> localpdata = mp_PDP->getLocalParticipantProxyData();
+    ParticipantProxy* local = mp_PDP->getLocalParticipantProxy();
+    auto localpdata = local->get_ppd();
     localpdata->m_properties.properties.push_back(EDPStaticProperty::toProperty("Reader","ALIVE", rdata->userDefinedId(), rdata->guid().entityId));
     mp_PDP->getMutex()->unlock();
     mp_PDP->announceParticipantState(true);
@@ -120,7 +121,8 @@ bool EDPStatic::processLocalWriterProxyData(RTPSWriter*, WriterProxyData* wdata)
     logInfo(RTPS_EDP ,wdata->guid().entityId << " in topic: " << wdata->topicName());
     mp_PDP->getMutex()->lock();
     //Add the property list entry to our local pdp
-    std::shared_ptr<ParticipantProxyData> localpdata = mp_PDP->getLocalParticipantProxyData();
+    ParticipantProxy* local = mp_PDP->getLocalParticipantProxy();
+    auto localpdata = local->get_ppd();
     localpdata->m_properties.properties.push_back(EDPStaticProperty::toProperty("Writer","ALIVE",
                 wdata->userDefinedId(), wdata->guid().entityId));
     mp_PDP->getMutex()->unlock();
@@ -131,7 +133,8 @@ bool EDPStatic::processLocalWriterProxyData(RTPSWriter*, WriterProxyData* wdata)
 bool EDPStatic::removeLocalReader(RTPSReader* R)
 {
     std::lock_guard<std::recursive_mutex> guard(*mp_PDP->getMutex());
-    std::shared_ptr<ParticipantProxyData> localpdata = mp_PDP->getLocalParticipantProxyData();
+    ParticipantProxy* local = mp_PDP->getLocalParticipantProxy();
+    auto localpdata = local->get_ppd();
     for(std::vector<std::pair<std::string,std::string>>::iterator pit = localpdata->m_properties.properties.begin();
             pit!=localpdata->m_properties.properties.end();++pit)
     {
@@ -151,7 +154,8 @@ bool EDPStatic::removeLocalReader(RTPSReader* R)
 bool EDPStatic::removeLocalWriter(RTPSWriter*W)
 {
     std::lock_guard<std::recursive_mutex> guard(*mp_PDP->getMutex());
-    std::shared_ptr<ParticipantProxyData> localpdata = mp_PDP->getLocalParticipantProxyData();
+    ParticipantProxy* local = mp_PDP->getLocalParticipantProxy();
+    auto localpdata = local->get_ppd();
     for(std::vector<std::pair<std::string,std::string>>::iterator pit = localpdata->m_properties.properties.begin();
             pit!=localpdata->m_properties.properties.end();++pit)
     {
@@ -259,10 +263,10 @@ bool EDPStatic::newRemoteReader(
         };
 
         GUID_t temp_participant_guid;
-        ReaderProxyData* reader_data = this->mp_PDP->addReaderProxyData(reader_guid, temp_participant_guid, init_fun);
+        std::shared_ptr<ReaderProxyData> reader_data = mp_PDP->addReaderProxyData(reader_guid, temp_participant_guid, init_fun);
         if(reader_data != nullptr)
         {
-            this->pairing_reader_proxy_with_any_local_writer(participant_guid, reader_data);
+            this->pairing_reader_proxy_with_any_local_writer(participant_guid, reader_data.get());
 
             // addReaderProxyData returns a lock object on success
             reader_data->unlock();
@@ -313,10 +317,10 @@ bool EDPStatic::newRemoteWriter(
             return true;
         };
         GUID_t temp_participant_guid;
-        WriterProxyData* writer_data = this->mp_PDP->addWriterProxyData(writer_guid, temp_participant_guid, init_fun);
+        std::shared_ptr<WriterProxyData> writer_data = mp_PDP->addWriterProxyData(writer_guid, temp_participant_guid, init_fun);
         if (writer_data != nullptr)
         {
-            this->pairing_writer_proxy_with_any_local_reader(participant_guid, writer_data);
+            this->pairing_writer_proxy_with_any_local_reader(participant_guid, writer_data.get());
 
             // addWriterProxyData returns the object locked
             writer_data->unlock();

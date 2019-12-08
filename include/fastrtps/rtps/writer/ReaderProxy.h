@@ -240,7 +240,7 @@ public:
      */
     inline const GUID_t& guid() const
     {
-        return reader_attributes_.guid();
+        return get_attributes()->guid();
     }
 
     /**
@@ -249,7 +249,7 @@ public:
      */
     inline DurabilityKind_t durability_kind() const
     {
-        return reader_attributes_.m_qos.m_durability.durabilityKind();
+        return get_attributes()->m_qos.m_durability.durabilityKind();
     }
 
     /**
@@ -258,7 +258,7 @@ public:
      */
     inline bool expects_inline_qos() const
     {
-        return reader_attributes_.m_expectsInlineQos;
+        return get_attributes()->m_expectsInlineQos;
     }
 
     /**
@@ -267,7 +267,7 @@ public:
      */
     inline bool is_reliable() const
     {
-        return reader_attributes_.m_qos.m_reliability.kind == RELIABLE_RELIABILITY_QOS;
+        return get_attributes()->m_qos.m_reliability.kind == RELIABLE_RELIABILITY_QOS;
     }
 
     /**
@@ -277,16 +277,18 @@ public:
     inline bool is_remote_and_reliable() const
     {
         return !locator_info_.is_local_reader() &&
-               reader_attributes_.m_qos.m_reliability.kind == RELIABLE_RELIABILITY_QOS;
+               get_attributes()->m_qos.m_reliability.kind == RELIABLE_RELIABILITY_QOS;
     }
 
     /**
      * Get the attributes of the reader represented by this proxy.
-     * @return the attributes of the reader represented by this proxy.
+     * @return a shared_ptr to the attributes of the reader represented by this proxy.
      */
-    inline const ReaderProxyData& reader_attributes() const
+    std::shared_ptr<ReaderProxyData> get_attributes() const
     {
-        return reader_attributes_;
+        // ReaderProxy uses a weak_ptr because the liveliness
+        // is managed from the ParticipantProxy strong reference
+        return reader_attributes_.lock();
     }
 
     /**
