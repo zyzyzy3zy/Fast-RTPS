@@ -813,7 +813,8 @@ std::shared_ptr<ReaderProxyData> PDP::addReaderProxyData(
     }
 
     // The participant must be there
-    assert(pp != nullptr && participant_guid != GUID_t::unknown());
+    //assert(pp != nullptr);
+    //assert(participant_guid != GUID_t::unknown());
 
     // Get Participant allocation policies just in case we have to create a new one
     const RTPSParticipantAttributes& part_att = getRTPSParticipant()->getRTPSParticipantAttributes();
@@ -1108,12 +1109,15 @@ bool PDP::remove_remote_participant(
         if(pp->get_guid() == partGUID)
         {
             pdata = pp;
-            participant_proxies_.remove(pp);
             break;
         }
     }
 
-    if(!pdata)
+    if(pdata)
+    {
+        participant_proxies_.remove(pdata);
+    }
+    else
     {
         // nothing to remove
         return false;
@@ -1220,14 +1224,23 @@ const BuiltinAttributes& PDP::builtin_attributes() const
 void PDP::assert_remote_participant_liveliness(
         const GuidPrefix_t& remote_guid)
 {
+    if(remote_guid == getRTPSParticipant()->getGuid().guidPrefix)
+    {
+        return;
+    }
+
     std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
 
-    for (ParticipantProxy* pp : participant_proxies_)
+    if(participant_proxies_.size() > 1)
     {
-        if(pp->get_guid_prefix() == remote_guid)
+
+        for(ParticipantProxy* pp : participant_proxies_)
         {
-            pp->assert_liveliness();
-            break;
+            if(pp->get_guid_prefix() == remote_guid)
+            {
+                pp->assert_liveliness();
+                break;
+            }
         }
     }
 }

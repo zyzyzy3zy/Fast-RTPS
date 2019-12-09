@@ -49,6 +49,7 @@ void EDPBasePUBListener::add_writer_from_change(
         EDP* edp)
 {
     // TODO IMPLEMENT VERSION MECHANISM TO AVOID USELESS DESERIALIZATION
+    auto data_lock = temp_writer_data_.unique_lock();
 
     //LOAD INFORMATION IN DESTINATION WRITER PROXY DATA
     const NetworkFactory& network = edp->mp_RTPSParticipant->network_factory();
@@ -156,6 +157,7 @@ void EDPBaseSUBListener::add_reader_from_change(
         EDP* edp)
 {
     // TODO IMPLEMENT VERSION MECHANISM TO AVOID USELESS DESERIALIZATION
+    auto data_lock = temp_reader_data_.unique_lock();
 
     //LOAD INFORMATION IN TEMPORAL WRITER PROXY DATA
     const NetworkFactory& network = edp->mp_RTPSParticipant->network_factory();

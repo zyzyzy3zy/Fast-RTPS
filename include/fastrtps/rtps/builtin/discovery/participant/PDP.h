@@ -301,6 +301,8 @@ public:
      */
     ParticipantProxy* getLocalParticipantProxy()
     {
+        std::lock_guard<std::recursive_mutex> guardPDP(*mp_mutex);
+
         return participant_proxies_.front();
     }
 

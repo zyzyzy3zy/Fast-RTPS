@@ -1016,6 +1016,9 @@ std::vector<std::string> RTPSParticipantImpl::getParticipantNames() const
 {
     std::vector<std::string> participant_names;
     auto pdp = mp_builtinProtocols->mp_PDP;
+
+    std::lock_guard<std::recursive_mutex> pdp_lock(*pdp->getMutex());
+
     for (auto it = pdp->ParticipantProxiesBegin(); it != pdp->ParticipantProxiesEnd(); ++it)
     {
         participant_names.emplace_back(((*it)->get_ppd()->m_participantName.to_string()));
