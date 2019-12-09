@@ -150,7 +150,7 @@ void PDPListener::onNewCacheChangeAdded(
             }
             // Release mutexes ownership
             reader->getMutex().unlock();
-            lock.unlock();
+            // We must keep the pdp lock to keep proper lock order: pdp -> ppd
 
             if(nullptr != pp)
             {
@@ -175,7 +175,7 @@ void PDPListener::onNewCacheChangeAdded(
 
             // Release mutexes ownership
             reader->getMutex().unlock();
-            lock.unlock();
+            // We must keep the pdp lock to keep proper lock order: pdp -> ppd
 
             if(parent_pdp_->updateInfoMatchesEDP())
             {

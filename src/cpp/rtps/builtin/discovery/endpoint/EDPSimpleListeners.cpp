@@ -81,26 +81,30 @@ void EDPBasePUBListener::add_writer_from_change(
             return true;
         };
 
+        // At this point we can release reader lock, cause change is not used
+        reader->getMutex().unlock();
+
+        // Take the PDP befor taking any WPD or RPD mutex
+        std::lock_guard<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
+
         GUID_t participant_guid;
         std::shared_ptr<WriterProxyData> writer_data =
             edp->mp_PDP->addWriterProxyData(temp_writer_data_.guid(), participant_guid, copy_data_fun);
         if (writer_data)
         {
-            // At this point we can release reader lock, cause change is not used
-            reader->getMutex().unlock();
-
             edp->pairing_writer_proxy_with_any_local_reader(participant_guid, writer_data.get());
 
-            // Take again the reader lock.
-            reader->getMutex().lock();
-
-            // unlock ParticipantProxyData
+            // unlock WriterProxyData
             writer_data->unlock();
         }
         else //NOT ADDED BECAUSE IT WAS ALREADY THERE
         {
             logWarning(RTPS_EDP, "Received message from UNKNOWN RTPSParticipant, removing");
         }
+
+        // Take again the reader lock.
+        reader->getMutex().lock();
+
     }
 }
 
@@ -183,26 +187,32 @@ void EDPBaseSUBListener::add_reader_from_change(
             return true;
         };
 
-        //LOOK IF IS AN UPDATED INFORMATION
+        // At this point we can release reader lock, cause change is not used
+        // and the following methods lock on PDP leading to possible deadlocks
+        // proper lock order: PDP -> EDP READER (PDP Listeners make EDP matching)
+        reader->getMutex().unlock();
+
+        // Take the PDP befor taking any WPD or RPD mutex
+        std::lock_guard<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
+
         GUID_t participant_guid;
         std::shared_ptr<ReaderProxyData> reader_data =
             edp->mp_PDP->addReaderProxyData(temp_reader_data_.guid(), participant_guid, copy_data_fun);
         if (reader_data != nullptr) //ADDED NEW DATA
         {
-            // At this point we can release reader lock, cause change is not used
-            reader->getMutex().unlock();
-
             edp->pairing_reader_proxy_with_any_local_writer(participant_guid, reader_data.get());
 
-            // Take again the reader lock.
-            reader->getMutex().lock();
-            // unlock ParticipantProxyData
+            // unlock ReaderProxyData
             reader_data->unlock();
         }
         else
         {
             logWarning(RTPS_EDP, "From UNKNOWN RTPSParticipant, removing");
         }
+
+        // Take again the reader lock.
+        reader->getMutex().lock();
+
     }
 }
     
