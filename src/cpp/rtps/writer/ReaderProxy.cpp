@@ -103,7 +103,6 @@ void ReaderProxy::start(
         reader_attributes.m_expectsInlineQos);
 
     is_active_ = true;
-    *(reader_attributes_.lock()) = reader_attributes;
 
     timers_enabled_.store(is_remote_and_reliable());
     if (is_local_reader())
