@@ -115,7 +115,7 @@ void PDPListener::onNewCacheChangeAdded(
         // 3 - Deserialize if needed
         bool deserialize = false;
         if( !pdata || pdata->version_ < seq_num )
-        { 
+        {
             // Access to temp_participant_data_ is protected by reader lock
             // deserialize on temp_participant_data if new info
             temp_participant_data_.clear();
@@ -140,6 +140,27 @@ void PDPListener::onNewCacheChangeAdded(
             }
         }
 
+        // Decide whether we dismiss the remote participant using the local participant whitelist
+        auto whitelist = parent_pdp_->getRTPSParticipant()->getRTPSParticipantAttributes().participantWhitelist;
+        if (deserialize)
+        {
+            if (!whitelist.empty()
+                    && whitelist.find(temp_participant_data_.m_participantName.to_string()) == whitelist.end())
+            {
+                lock.unlock();
+                return;
+            }
+        }
+        else
+        {
+            if (!whitelist.empty()
+                    && whitelist.find(pdata->m_participantName.to_string()) == whitelist.end())
+            {
+                lock.unlock();
+                return;
+            }
+        }
+
         if( create )
         {
             if(deserialize)
@@ -155,9 +176,11 @@ void PDPListener::onNewCacheChangeAdded(
             // Release mutexes ownership
             reader->getMutex().unlock();
             lock.unlock();
-
-            parent_pdp_->announceParticipantState(false);
-            parent_pdp_->assignRemoteEndpoints(pdata.get());
+            if (pdata != nullptr)
+            {
+                parent_pdp_->announceParticipantState(false);
+                parent_pdp_->assignRemoteEndpoints(pdata.get());
+            }
 
             // pdata->ppd_mutex_->unlock(); // got by createParticipantProxyData
         }
@@ -184,7 +207,7 @@ void PDPListener::onNewCacheChangeAdded(
             reader->getMutex().unlock();
             lock.unlock();
         }
-        
+
         if( pdata && (create || deserialize) )
         {
             RTPSParticipantListener* listener = parent_pdp_->getRTPSParticipant()->getListener();
