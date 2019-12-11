@@ -66,7 +66,8 @@ ParticipantProxyData::ParticipantProxyData(const RTPSParticipantAllocationAttrib
     }
 
 ParticipantProxyData::ParticipantProxyData(const ParticipantProxyData& pdata)
-    : m_protocolVersion(pdata.m_protocolVersion)
+    : std::enable_shared_from_this<ParticipantProxyData>(pdata)
+    , m_protocolVersion(pdata.m_protocolVersion)
     , m_guid(pdata.m_guid)
     , m_VendorId(pdata.m_VendorId)
     , m_expectsInlineQos(pdata.m_expectsInlineQos)
