@@ -2830,7 +2830,20 @@ void blackbox_security_init()
     }
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(Security,
+        Security,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<Security::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+        });
+#else
+INSTANTIATE_TEST_SUITE_P(Security,
         Security,
         testing::Values(false, true),
         [](const testing::TestParamInfo<Security::ParamType>& info) {
@@ -2840,5 +2853,6 @@ INSTANTIATE_TEST_CASE_P(Security,
             }
             return "NonIntraprocess";
         });
-
 #endif
+
+#endif // HAS_SECURITY

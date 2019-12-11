@@ -286,7 +286,20 @@ TEST_P(PubSubBasic, PubSubAsReliableHelloworldMulticastDisabled)
     reader.block_for_all();
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(PubSubBasic,
+        PubSubBasic,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<PubSubBasic::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(PubSubBasic,
         PubSubBasic,
         testing::Values(false, true),
         [](const testing::TestParamInfo<PubSubBasic::ParamType>& info) {
@@ -296,4 +309,5 @@ INSTANTIATE_TEST_CASE_P(PubSubBasic,
             }
             return "NonIntraprocess";
         });
+#endif
 

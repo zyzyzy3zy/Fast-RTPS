@@ -344,7 +344,20 @@ TEST(PubSubFragments, AsyncFragmentSizeTest)
 }
 
 
-INSTANTIATE_TEST_CASE_P(PubSubFragments,
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
+    INSTANTIATE_TEST_SUITE_P(PubSubFragments,
+        PubSubFragments,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<PubSubFragments::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(PubSubFragments,
         PubSubFragments,
         testing::Values(false, true),
         [](const testing::TestParamInfo<PubSubFragments::ParamType>& info) {
@@ -354,3 +367,4 @@ INSTANTIATE_TEST_CASE_P(PubSubFragments,
             }
             return "NonIntraprocess";
         });
+#endif

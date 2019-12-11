@@ -237,15 +237,28 @@ TEST_P(CacheChangePoolTests, chage_change)
     }
 }
 
-INSTANTIATE_TEST_CASE_P(
-    instance_1,
-    CacheChangePoolTests,
-    Combine(Values(0, 10, 20, 30),
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
+    INSTANTIATE_TEST_CASE_P(
+        instance_1,
+        CacheChangePoolTests,
+        Combine(Values(0, 10, 20, 30),
             Values(0, 10, 20, 30),
             Values(128, 256, 512, 1024),
             Values(MemoryManagementPolicy_t::PREALLOCATED_MEMORY_MODE,
-                   MemoryManagementPolicy_t::PREALLOCATED_WITH_REALLOC_MEMORY_MODE,
-                   MemoryManagementPolicy_t::DYNAMIC_RESERVE_MEMORY_MODE)), );
+                MemoryManagementPolicy_t::PREALLOCATED_WITH_REALLOC_MEMORY_MODE,
+                MemoryManagementPolicy_t::DYNAMIC_RESERVE_MEMORY_MODE)), );
+#else
+    INSTANTIATE_TEST_SUITE_P(
+        instance_1,
+        CacheChangePoolTests,
+        Combine(Values(0, 10, 20, 30),
+            Values(0, 10, 20, 30),
+            Values(128, 256, 512, 1024),
+            Values(MemoryManagementPolicy_t::PREALLOCATED_MEMORY_MODE,
+                MemoryManagementPolicy_t::PREALLOCATED_WITH_REALLOC_MEMORY_MODE,
+                MemoryManagementPolicy_t::DYNAMIC_RESERVE_MEMORY_MODE)));
+#endif  // GTEST_REMOVE_LEGACY_TEST_CASEAPI_
 
 int main(int argc, char **argv)
 {

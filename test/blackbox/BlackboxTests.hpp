@@ -15,8 +15,6 @@
 #ifndef __BLACKBOX_BLACKBOXTESTS_HPP__
 #define __BLACKBOX_BLACKBOXTESTS_HPP__
 
-#define TEST_TOPIC_NAME std::string(::testing::UnitTest::GetInstance()->current_test_info()->test_case_name() + std::string("_") + ::testing::UnitTest::GetInstance()->current_test_info()->name())
-
 #if defined(_WIN32)
 #define GET_PID _getpid
 #include <process.h>
@@ -37,6 +35,13 @@
 #include <list>
 #include <functional>
 #include <gtest/gtest.h>
+
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
+#define TEST_TOPIC_NAME std::string(::testing::UnitTest::GetInstance()->current_test_info()->test_case_name() + std::string("_") + ::testing::UnitTest::GetInstance()->current_test_info()->name())
+#else
+#define TEST_TOPIC_NAME std::string(::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name() + std::string("_") + ::testing::UnitTest::GetInstance()->current_test_info()->name())
+#endif  
 
 #if HAVE_SECURITY
 extern void blackbox_security_init();

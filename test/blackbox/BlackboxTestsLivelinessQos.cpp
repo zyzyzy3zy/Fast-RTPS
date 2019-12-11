@@ -1610,7 +1610,20 @@ TEST_P(LivelinessQos, AssertLivelinessParticipant)
     EXPECT_EQ(publishers.pub_times_liveliness_lost(), 2u);
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(LivelinessQos,
+        LivelinessQos,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<LivelinessQos::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(LivelinessQos,
         LivelinessQos,
         testing::Values(false, true),
         [](const testing::TestParamInfo<LivelinessQos::ParamType>& info) {
@@ -1620,4 +1633,5 @@ INSTANTIATE_TEST_CASE_P(LivelinessQos,
             }
             return "NonIntraprocess";
         });
+#endif
 

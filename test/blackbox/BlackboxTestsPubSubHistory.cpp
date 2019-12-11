@@ -472,7 +472,20 @@ TEST_P(PubSubHistory, PubSubAsReliableKeepLastReaderSmallDepthTwoPublishers)
     ASSERT_EQ(received.index(), 3u);
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(PubSubHistory,
+        PubSubHistory,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<PubSubHistory::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+});
+#else
+INSTANTIATE_TEST_SUITE_P(PubSubHistory,
         PubSubHistory,
         testing::Values(false, true),
         [](const testing::TestParamInfo<PubSubHistory::ParamType>& info) {
@@ -482,4 +495,5 @@ INSTANTIATE_TEST_CASE_P(PubSubHistory,
             }
             return "NonIntraprocess";
         });
+#endif
 

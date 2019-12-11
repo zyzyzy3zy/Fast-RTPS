@@ -572,7 +572,20 @@ TEST_P(RealtimeAllocations, AsyncPubSubBestEffortWithLimitedPublishers)
     }
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(RealtimeAllocations,
+        RealtimeAllocations,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<RealtimeAllocations::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(RealtimeAllocations,
         RealtimeAllocations,
         testing::Values(false, true),
         [](const testing::TestParamInfo<RealtimeAllocations::ParamType>& info) {
@@ -582,4 +595,5 @@ INSTANTIATE_TEST_CASE_P(RealtimeAllocations,
             }
             return "NonIntraprocess";
         });
+#endif
 

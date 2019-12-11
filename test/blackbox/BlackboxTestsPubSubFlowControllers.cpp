@@ -163,7 +163,20 @@ TEST_P(PubSubFlowControllers, FlowControllerIfNotAsync)
     ASSERT_FALSE(writer.isInitialized());
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(PubSubFlowControllers,
+            PubSubFlowControllers,
+            testing::Values(false, true),
+            [](const testing::TestParamInfo<PubSubFlowControllers::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(PubSubFlowControllers,
         PubSubFlowControllers,
         testing::Values(false, true),
         [](const testing::TestParamInfo<PubSubFlowControllers::ParamType>& info) {
@@ -173,4 +186,5 @@ INSTANTIATE_TEST_CASE_P(PubSubFlowControllers,
             }
             return "NonIntraprocess";
         });
+#endif
 

@@ -231,13 +231,27 @@ TEST_P(DeadlineQos, KeyedTopicShortDeadline)
     EXPECT_GE(reader.missed_deadlines(), writer_samples);
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(DeadlineQos,
-        DeadlineQos,
-        testing::Values(false, true),
-        [](const testing::TestParamInfo<DeadlineQos::ParamType>& info) {
-            if (info.param)
-            {
-                return "Intraprocess";
-            }
-            return "NonIntraprocess";
-        });
+    DeadlineQos,
+    testing::Values(false, true),
+    [](const testing::TestParamInfo<DeadlineQos::ParamType>& info) {
+    if(info.param)
+    {
+        return "Intraprocess";
+    }
+    return "NonIntraprocess";
+});
+#else
+INSTANTIATE_TEST_SUITE_P(DeadlineQos,
+    DeadlineQos,
+    testing::Values(false, true),
+    [](const testing::TestParamInfo<DeadlineQos::ParamType>& info) {
+    if(info.param)
+    {
+        return "Intraprocess";
+    }
+    return "NonIntraprocess";
+});
+#endif

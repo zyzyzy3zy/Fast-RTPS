@@ -153,7 +153,20 @@ TEST_P(LifespanQos, ShortLifespan)
     EXPECT_EQ(reader.takeNextData(&msg, &info), false);
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(LifespanQos,
+        LifespanQos,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<LifespanQos::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+    });
+#else
+INSTANTIATE_TEST_SUITE_P(LifespanQos,
         LifespanQos,
         testing::Values(false, true),
         [](const testing::TestParamInfo<LifespanQos::ParamType>& info) {
@@ -163,3 +176,4 @@ INSTANTIATE_TEST_CASE_P(LifespanQos,
             }
             return "NonIntraprocess";
         });
+#endif

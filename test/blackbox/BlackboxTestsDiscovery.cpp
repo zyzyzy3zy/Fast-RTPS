@@ -717,7 +717,20 @@ TEST_P(Discovery, TwentyParticipantsSeveralEndpointsUnicast)
     discoverParticipantsSeveralEndpointsTest(true, 20, 20, 20, TEST_TOPIC_NAME);
 }
 
+// Workaround to prevent deprecation assertions
+#ifndef INSTANTIATE_TEST_SUITE_P
 INSTANTIATE_TEST_CASE_P(Discovery,
+        Discovery,
+        testing::Values(false, true),
+        [](const testing::TestParamInfo<Discovery::ParamType>& info) {
+        if(info.param)
+        {
+            return "Intraprocess";
+        }
+        return "NonIntraprocess";
+});
+#else
+INSTANTIATE_TEST_SUITE_P(Discovery,
         Discovery,
         testing::Values(false, true),
         [](const testing::TestParamInfo<Discovery::ParamType>& info) {
@@ -727,4 +740,6 @@ INSTANTIATE_TEST_CASE_P(Discovery,
             }
             return "NonIntraprocess";
         });
+#endif
+
 
