@@ -69,7 +69,7 @@ public:
      * Activate this proxy associating it to a remote reader.
      * @param attributes shared_ptr to a ReaderProxyData of the reader for which to keep state.
      */
-    void ReaderProxy::start(
+    void start(
         std::shared_ptr<ReaderProxyData>& attributes);
 
     /**

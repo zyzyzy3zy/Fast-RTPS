@@ -157,7 +157,7 @@ public:
      * @param [in]  writer_guid temporary writer proxy data object
      * @return A pointer to the added WriterProxyData (nullptr if it could not be added).
      */
-    std::shared_ptr<WriterProxyData> PDP::add_builtin_writer_proxy_data(
+    std::shared_ptr<WriterProxyData> add_builtin_writer_proxy_data(
         const WriterProxyData & temp);
 
     /**
@@ -166,7 +166,7 @@ public:
      * @param [in]  reader_guid temporary writer proxy data object
      * @return A pointer to the added ReaderProxyData (nullptr if it could not be added).
      */
-    std::shared_ptr<ReaderProxyData> PDP::add_builtin_reader_proxy_data(
+    std::shared_ptr<ReaderProxyData> add_builtin_reader_proxy_data(
         const ReaderProxyData & temp);
 
     /**
@@ -193,7 +193,7 @@ public:
      * @param [in] reader GUID_t of the ReaderProxyData we want to pick up
      * @return ReaderProxyData if found.
      */
-    std::shared_ptr<ReaderProxyData> PDP::lookupReaderProxyData(
+    std::shared_ptr<ReaderProxyData> lookupReaderProxyData(
         const GUID_t& reader);
 
     /**
@@ -220,7 +220,7 @@ public:
      * @param [in] writer GUID_t of the WriterProxyData we want to pick up
      * @return WriterProxyData if found.
      */
-    std::shared_ptr<WriterProxyData> PDP::lookupWriterProxyData(
+    std::shared_ptr<WriterProxyData> lookupWriterProxyData(
             const GUID_t& writer);
 
     /**
@@ -431,9 +431,9 @@ protected:
     //!Alived participant proxies reference
     static std::map<GuidPrefix_t, std::weak_ptr<ParticipantProxyData>> pool_participant_references_;
     //!Alived participant readers reference
-    static std::map<GUID_t, std::weak_ptr<ReaderProxyData>> PDP::pool_reader_references_;
+    static std::map<GUID_t, std::weak_ptr<ReaderProxyData>> pool_reader_references_;
     //!Alived participant writers reference
-    static std::map<GUID_t, std::weak_ptr<WriterProxyData>> PDP::pool_writer_references_;
+    static std::map<GUID_t, std::weak_ptr<WriterProxyData>> pool_writer_references_;
 
     /**
      * Adds an entry to the collection of participant proxy information.
@@ -459,7 +459,7 @@ protected:
      *
      * @return pointer to the currently inserted entry, nullptr if allocation limits were reached.
      */
-    ParticipantProxy* PDP::add_participant_proxy(
+    ParticipantProxy* add_participant_proxy(
         std::shared_ptr<ParticipantProxyData>& ppd,
         bool with_lease_duration = true);
 

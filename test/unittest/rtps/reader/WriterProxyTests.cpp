@@ -99,7 +99,7 @@ TEST(WriterProxyTests, MissingChangesUpdate)
     using ::testing::Ref;
     using ::testing::Const;
 
-    WriterProxyData wattr( 4u, 1u );
+    auto wattr = std::make_shared<WriterProxyData>( 4u, 1u );
     StatefulReader readerMock; // avoid annoying uninteresting call warnings
 
     // Testing the Timed events are properly configured
@@ -268,7 +268,7 @@ TEST(WriterProxyTests, MissingChangesUpdate)
 
 TEST(WriterProxyTests, LostChangesUpdate)
 {
-    WriterProxyData wattr(4u, 1u);
+    auto wattr = std::make_shared<WriterProxyData>(4u, 1u);
     StatefulReader readerMock;
     WriterProxy wproxy(&readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig());
     EXPECT_CALL(*wproxy.initial_acknack_, update_interval(readerMock.getTimes().initialAcknackDelay)).Times(1u);
@@ -375,7 +375,7 @@ TEST(WriterProxyTests, LostChangesUpdate)
 
 TEST(WriterProxyTests, ReceivedChangeSet)
 {
-    WriterProxyData wattr(4u, 1u);
+    auto wattr = std::make_shared<WriterProxyData>(4u, 1u);
     StatefulReader readerMock;
     WriterProxy wproxy(&readerMock,
                        RemoteLocatorsAllocationAttributes(),
@@ -548,7 +548,7 @@ TEST(WriterProxyTests, ReceivedChangeSet)
 
 TEST(WriterProxyTests, IrrelevantChangeSet)
 {
-    WriterProxyData wattr(4u, 1u);
+    auto wattr = std::make_shared<WriterProxyData>(4u, 1u);
     StatefulReader readerMock;
     WriterProxy wproxy(&readerMock, RemoteLocatorsAllocationAttributes(), ResourceLimitedContainerConfig());
     EXPECT_CALL(*wproxy.initial_acknack_, update_interval(readerMock.getTimes().initialAcknackDelay)).Times(1u);
