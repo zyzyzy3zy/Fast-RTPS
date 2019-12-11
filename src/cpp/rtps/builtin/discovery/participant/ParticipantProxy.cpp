@@ -27,13 +27,12 @@ namespace fastrtps{
 namespace rtps {
 
 ParticipantProxy::ParticipantProxy(const RTPSParticipantAllocationAttributes& allocation)
-    : lease_duration_event_(nullptr)
-    , should_check_lease_duration_(false)
+    : should_check_lease_duration_(false)
     , readers_(allocation.readers)
     , writers_(allocation.writers)
     , builtin_readers_(allocation.participants) 
-    , builtin_writers_(allocation.participants
-    )
+    , builtin_writers_(allocation.participants)
+    , lease_duration_event_(nullptr)
 {
     // TODO: Barro, increase on security case
     ResourceLimitedContainerConfig builtin;
