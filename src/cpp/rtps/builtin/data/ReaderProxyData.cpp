@@ -68,11 +68,14 @@ ReaderProxyData::~ReaderProxyData()
 
 ReaderProxyData::ReaderProxyData(
         const ReaderProxyData& readerInfo)
-    : m_expectsInlineQos(readerInfo.m_expectsInlineQos)
+    : std::enable_shared_from_this<ReaderProxyData>(readerInfo)
+    , m_expectsInlineQos(readerInfo.m_expectsInlineQos)
+    , m_qos(readerInfo.m_qos)
 #if HAVE_SECURITY
     , security_attributes_(readerInfo.security_attributes_)
     , plugin_security_attributes_(readerInfo.plugin_security_attributes_)
 #endif
+    , version_(readerInfo.version_)
     , m_guid(readerInfo.m_guid)
     , remote_locators_(readerInfo.remote_locators_)
     , m_key(readerInfo.m_key)
@@ -85,7 +88,6 @@ ReaderProxyData::ReaderProxyData(
     , m_topicDiscoveryKind(readerInfo.m_topicDiscoveryKind)
     , m_type_id(nullptr)
     , m_type(nullptr)
-    , version_(readerInfo.version_)
 {
     if (readerInfo.m_type_id)
     {

@@ -76,7 +76,6 @@ ParticipantProxyData::ParticipantProxyData(const ParticipantProxyData& pdata)
     , m_participantName(pdata.m_participantName)
     , m_key(pdata.m_key)
     , lease_duration_(pdata.lease_duration_)
-    , lease_duration_us_(pdata.lease_duration_us_)
 #if HAVE_SECURITY
     , identity_token_(pdata.identity_token_)
     , permissions_token_(pdata.permissions_token_)
@@ -85,6 +84,8 @@ ParticipantProxyData::ParticipantProxyData(const ParticipantProxyData& pdata)
 #endif
     , m_properties(pdata.m_properties)
     , m_userData(pdata.m_userData)
+    , lease_duration_us_(pdata.lease_duration_us_)
+    , version_(pdata.version_)
     // This method is only called from SecurityManager when a new participant is discovered and the
     // corresponding DiscoveredParticipantInfo struct is created. Only participant info is used,
     // so there is no need to copy m_readers and m_writers

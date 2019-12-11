@@ -66,7 +66,9 @@ WriterProxyData::WriterProxyData(
     , plugin_security_attributes_(writerInfo.plugin_security_attributes_)
     , m_guid(writerInfo.m_guid)
 #else
-    : m_guid(writerInfo.m_guid)
+    : std::enable_shared_from_this<WriterProxyData>(writerInfo)
+    , version_(writerInfo.version_)
+    , m_guid(writerInfo.m_guid)
 #endif
     , remote_locators_(writerInfo.remote_locators_)
     , m_key(writerInfo.m_key)
@@ -79,8 +81,7 @@ WriterProxyData::WriterProxyData(
     , persistence_guid_(writerInfo.persistence_guid_)
     , m_topicDiscoveryKind(writerInfo.m_topicDiscoveryKind)
     , m_type_id(nullptr)
-    , m_type(nullptr)
-    , version_(writerInfo.version_)
+    , m_type(nullptr) 
 {
     if (writerInfo.m_type_id)
     {
