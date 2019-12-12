@@ -103,6 +103,8 @@ void EDPBasePUBListener::add_writer_from_change(
             logWarning(RTPS_EDP, "Received message from UNKNOWN RTPSParticipant, removing");
         }
 
+        // prevent ABBA deadlock, proper order is reader mutex > temp_object mutex
+        data_lock.unlock();
         // Take again the reader lock.
         reader->getMutex().lock();
 
@@ -212,9 +214,10 @@ void EDPBaseSUBListener::add_reader_from_change(
             logWarning(RTPS_EDP, "From UNKNOWN RTPSParticipant, removing");
         }
 
+        // prevent ABBA deadlock, proper order is reader mutex > temp_object mutex
+        data_lock.unlock();
         // Take again the reader lock.
         reader->getMutex().lock();
-
     }
 }
     
