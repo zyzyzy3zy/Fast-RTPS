@@ -346,7 +346,7 @@ TEST(PubSubFragments, AsyncFragmentSizeTest)
 
 // Workaround to prevent deprecation assertions
 #ifndef INSTANTIATE_TEST_SUITE_P
-    INSTANTIATE_TEST_SUITE_P(PubSubFragments,
+    INSTANTIATE_TEST_CASE_P(PubSubFragments,
         PubSubFragments,
         testing::Values(false, true),
         [](const testing::TestParamInfo<PubSubFragments::ParamType>& info) {

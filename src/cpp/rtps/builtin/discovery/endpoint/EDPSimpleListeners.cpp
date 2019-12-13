@@ -137,10 +137,16 @@ void EDPSimplePUBListener::onNewCacheChangeAdded(
     }
     else
     {
+        // Proper lock order is PDP -> EDP Readers
+        reader->getMutex().unlock();
+
         //REMOVE WRITER FROM OUR READERS:
         logInfo(RTPS_EDP,"Disposed Remote Writer, removing...");
         GUID_t writer_guid = iHandle2GUID(change->instanceHandle);
         this->sedp_->mp_PDP->removeWriterProxyData(writer_guid);
+
+        // retake the reader lock
+        reader->getMutex().lock();
     }
 
     //Removing change from history
@@ -244,15 +250,22 @@ void EDPSimpleSUBListener::onNewCacheChangeAdded(
 
     if(change->kind == ALIVE)
     {
+        // proper lock order: PDP -> EDP Readers
         add_reader_from_change(reader, change, sedp_);
     }
     else
     {
+        // Proper lock order is PDP -> EDP Readers
+        reader->getMutex().unlock();
+
         //REMOVE WRITER FROM OUR READERS:
         logInfo(RTPS_EDP,"Disposed Remote Reader, removing...");
 
         GUID_t reader_guid = iHandle2GUID(change->instanceHandle);
         sedp_->mp_PDP->removeReaderProxyData(reader_guid);
+
+        // retake reader lock
+        reader->getMutex().lock();
     }
 
     // Remove change from history.

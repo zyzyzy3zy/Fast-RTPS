@@ -186,7 +186,6 @@ void PDPListener::onNewCacheChangeAdded(
         {
             // Release mutexes ownership
             reader->getMutex().unlock();
-            lock.unlock();
         }
         
         if( pdata && ( create || deserialize ) )

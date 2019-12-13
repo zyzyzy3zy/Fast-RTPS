@@ -1073,7 +1073,7 @@ std::shared_ptr<WriterProxyData> PDP::addWriterProxyData(
         return nullptr;
     }
  
-    // Add to ParticipantProxyData
+    // Add to ParticipantProxy
     pp->writers_.push_back(ret_val);
 
     std::unique_lock<std::recursive_mutex> ppd_lock(pp->proxy_data_->ppd_mutex_);

@@ -339,6 +339,7 @@ class PubSubWriterReader
         participant_attr_.rtps.builtin.avoid_builtin_multicast = avoid_multicast;
         participant_attr_.rtps.builtin.discovery_config.initial_announcements.count = initial_pdp_count;
         participant_attr_.rtps.builtin.domainId = (uint32_t)GET_PID() % 230;
+        participant_attr_.rtps.builtin.discovery_config.leaseDuration = {100000000,0};
         participant_ = eprosima::fastrtps::Domain::createParticipant(participant_attr_, &participant_listener_);
 
         if(participant_ != nullptr)
