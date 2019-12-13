@@ -48,6 +48,8 @@ ParticipantProxy::ParticipantProxy(const RTPSParticipantAllocationAttributes& al
 
 ParticipantProxy::~ParticipantProxy()
 {
+    clear();
+
     if(lease_duration_event_)
     {
         delete lease_duration_event_;

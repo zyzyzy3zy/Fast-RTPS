@@ -86,7 +86,7 @@ void EDPBasePUBListener::add_writer_from_change(
         reader->getMutex().unlock();
 
         // Take the PDP befor taking any WPD or RPD mutex
-        std::lock_guard<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
+        std::unique_lock<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
 
         GUID_t participant_guid;
         std::shared_ptr<WriterProxyData> writer_data =
@@ -105,6 +105,7 @@ void EDPBasePUBListener::add_writer_from_change(
 
         // prevent ABBA deadlock, proper order is reader mutex > temp_object mutex
         data_lock.unlock();
+        lock.unlock();
         // Take again the reader lock.
         reader->getMutex().lock();
 
@@ -197,7 +198,7 @@ void EDPBaseSUBListener::add_reader_from_change(
         reader->getMutex().unlock();
 
         // Take the PDP befor taking any WPD or RPD mutex
-        std::lock_guard<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
+        std::unique_lock<std::recursive_mutex> lock(*edp->mp_PDP->getMutex());
 
         GUID_t participant_guid;
         std::shared_ptr<ReaderProxyData> reader_data =
@@ -214,8 +215,9 @@ void EDPBaseSUBListener::add_reader_from_change(
             logWarning(RTPS_EDP, "From UNKNOWN RTPSParticipant, removing");
         }
 
-        // prevent ABBA deadlock, proper order is reader mutex > temp_object mutex
+        // prevent ABBA deadlock, proper order is reader mutex > PDP mutex > temp_object mutex
         data_lock.unlock();
+        lock.unlock();
         // Take again the reader lock.
         reader->getMutex().lock();
     }
