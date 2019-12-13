@@ -80,7 +80,10 @@ WriterProxy::WriterProxy(
         new TimedEvent(reader_->getRTPSParticipant()->getEventResource(),
                 [&]() -> bool
                 {
-                    perform_heartbeat_response();
+                    if(is_alive_)
+                    {
+                        perform_heartbeat_response();
+                    }
                     return false;
                 },
                 0);
@@ -89,7 +92,10 @@ WriterProxy::WriterProxy(
         new TimedEvent(reader_->getRTPSParticipant()->getEventResource(),
                 [&]() -> bool
                 {
-                    perform_initial_ack_nack();
+                    if(is_alive_)
+                    {
+                        perform_initial_ack_nack();
+                    }
                     return false;
                 },
                 0);

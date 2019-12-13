@@ -175,7 +175,10 @@ ParticipantProxy* PDP::add_participant_proxy(
                 ret_val->set_lease_duration_event(new TimedEvent(mp_RTPSParticipant->getEventResource(),
                     [this, ret_val]() -> bool
                 {
-                    check_remote_participant_liveliness(ret_val);
+                    if(ret_val->get_ppd())
+                    {
+                        check_remote_participant_liveliness(ret_val);
+                    }
                     return false;
                 }, 0.0));
             }

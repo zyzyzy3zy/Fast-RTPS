@@ -55,7 +55,10 @@ namespace rtps {
         new TimedEvent(writer_->getRTPSParticipant()->getEventResource(),
                 [&]() -> bool
                 {
-                    writer_->perform_nack_supression(get_attributes()->guid());
+                    if(is_active_)
+                    {
+                        writer_->perform_nack_supression(get_attributes()->guid());
+                    }
                     return false;
                 },
                 TimeConv::Time_t2MilliSecondsDouble(times.nackSupressionDuration));
@@ -64,7 +67,10 @@ namespace rtps {
         new TimedEvent(writer->getRTPSParticipant()->getEventResource(),
                 [&]() -> bool
                 {
-                    writer_->intraprocess_heartbeat(this);
+                    if(is_active_)
+                    {
+                        writer_->intraprocess_heartbeat(this);
+                    }
                     return false;
                 },
                 0);
@@ -151,6 +157,10 @@ void ReaderProxy::stop()
     last_acknack_count_ = 0;
     last_nackfrag_count_ = 0;
     changes_low_mark_ = SequenceNumber_t();
+
+    // disable events
+    nack_supression_event_->cancel_timer();
+    initial_heartbeat_event_->cancel_timer();
 }
 
 void ReaderProxy::disable_timers()
