@@ -169,7 +169,7 @@ ParticipantProxy* PDP::add_participant_proxy(
                 return nullptr;
             }
 
-            // Create the event only for other participants
+            // Create the event always because its shared with other participants
             if(ppd->m_guid != mp_RTPSParticipant->getGuid())
             {
                 ret_val->set_lease_duration_event(new TimedEvent(mp_RTPSParticipant->getEventResource(),
@@ -190,6 +190,13 @@ ParticipantProxy* PDP::add_participant_proxy(
         participant_proxies_pool_.pop_back();
     }
 
+    // Update lease duration event for other participants
+    auto event = ret_val->get_lease_duration_event();
+    if(event)
+    {
+        event->update_interval(ppd->lease_duration_);
+        event->restart_timer();
+    }
     // associate the local object with the global one
     ret_val->set_ppd(std::move(ppd));
     // update lease duration properties
