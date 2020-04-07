@@ -421,3 +421,17 @@ TEST(BlackBox, TCPLocalhost)
         requester.block();
     }
 }
+// Regression test for TCP+XML discovery issue found in SOSS-DDS
+TEST(BlackBox, TCPdiscoveryXML)
+{
+    TCPReqRepHelloWorldRequester requester("resources/tcp_config.xml", "profile_client");
+    TCPReqRepHelloWorldReplier replier("resources/tcp_config.xml", "profile_server");
+
+
+    // Wait for discovery.
+    requester.wait_discovery();
+    replier.wait_discovery();
+
+    ASSERT_TRUE(requester.is_matched());
+    ASSERT_TRUE(replier.is_matched());
+}

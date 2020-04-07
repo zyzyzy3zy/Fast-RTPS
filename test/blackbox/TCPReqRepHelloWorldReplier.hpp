@@ -23,6 +23,7 @@
 #include "types/HelloWorldType.h"
 
 #include <fastrtps/fastrtps_fwd.h>
+#include <fastrtps/participant/ParticipantListener.h>
 #include <fastrtps/subscriber/SubscriberListener.h>
 #include <fastrtps/attributes/SubscriberAttributes.h>
 #include <fastrtps/publisher/PublisherListener.h>
@@ -43,6 +44,28 @@
 
 class TCPReqRepHelloWorldReplier
 {
+    class PartListener : public eprosima::fastrtps::ParticipantListener
+    {
+    public:
+        PartListener(
+                TCPReqRepHelloWorldReplier& replier)
+            : replier_(replier)
+        {
+        }
+
+        void onParticipantDiscovery(
+                eprosima::fastrtps::Participant* /*participant*/,
+                eprosima::fastrtps::rtps::ParticipantDiscoveryInfo&& info) override
+        {
+            if (info.status == eprosima::fastrtps::rtps::ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT)
+            {
+                replier_.matched();
+            }
+        }
+    private:
+        TCPReqRepHelloWorldReplier& replier_;
+    } participant_listener_;
+
     public:
 
         class ReplyListener: public eprosima::fastrtps::SubscriberListener
@@ -85,6 +108,9 @@ class TCPReqRepHelloWorldReplier
     } reply_listener_;
 
         TCPReqRepHelloWorldReplier();
+        TCPReqRepHelloWorldReplier(
+                const std::string& file,
+                const std::string& profile);
         virtual ~TCPReqRepHelloWorldReplier();
         void init(
             int participantId,

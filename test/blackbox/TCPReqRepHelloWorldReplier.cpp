@@ -30,19 +30,54 @@
 
 #include <fastrtps/transport/TCPv4TransportDescriptor.h>
 #include <fastrtps/utils/IPLocator.h>
+#include <fastrtps/xmlparser/XMLProfileManager.h>
 
 #include <gtest/gtest.h>
 
 using namespace eprosima::fastrtps;
 using namespace eprosima::fastrtps::rtps;
 
-TCPReqRepHelloWorldReplier::TCPReqRepHelloWorldReplier(): request_listener_(*this), reply_listener_(*this),
-    participant_(nullptr), request_subscriber_(nullptr), reply_publisher_(nullptr),
-    initialized_(false), matched_(0)
+TCPReqRepHelloWorldReplier::TCPReqRepHelloWorldReplier()
+    : participant_listener_(*this)
+    , request_listener_(*this)
+    , reply_listener_(*this)
+    , participant_(nullptr)
+    , request_subscriber_(nullptr)
+    , reply_publisher_(nullptr)
+    , initialized_(false)
+    , matched_(0)
 {
     // By default, memory mode is preallocated (the most restritive)
     sattr.historyMemoryPolicy = PREALLOCATED_MEMORY_MODE;
     puattr.historyMemoryPolicy = PREALLOCATED_MEMORY_MODE;
+}
+
+TCPReqRepHelloWorldReplier::TCPReqRepHelloWorldReplier(
+        const std::string& file,
+        const std::string& profile)
+    : participant_listener_(*this)
+    , request_listener_(*this)
+    , reply_listener_(*this)
+    , participant_(nullptr)
+    , request_subscriber_(nullptr)
+    , reply_publisher_(nullptr)
+    , initialized_(false)
+    , matched_(0)
+{
+    using eprosima::fastrtps::xmlparser::XMLP_ret;
+    using eprosima::fastrtps::xmlparser::XMLProfileManager;
+
+    if (XMLP_ret::XML_OK != XMLProfileManager::loadXMLFile(file))
+    {
+        std::cerr << "Failed to load configuration file '" << file << "'." << std::endl;
+    }
+
+    participant_ = Domain::createParticipant(profile, &participant_listener_);
+
+    if (nullptr == participant_)
+    {
+        std::cerr << "Error creating a participant from profile '" << profile << "'." << std::endl;
+    }
 }
 
 TCPReqRepHelloWorldReplier::~TCPReqRepHelloWorldReplier()

@@ -23,6 +23,7 @@
 #include "types/HelloWorldType.h"
 
 #include <fastrtps/fastrtps_fwd.h>
+#include <fastrtps/participant/ParticipantListener.h>
 #include <fastrtps/subscriber/SubscriberListener.h>
 #include <fastrtps/attributes/SubscriberAttributes.h>
 #include <fastrtps/publisher/PublisherListener.h>
@@ -45,10 +46,31 @@
 class TCPReqRepHelloWorldRequester
 {
 public:
+    class PartListener : public eprosima::fastrtps::ParticipantListener
+    {
+    public:
+        PartListener(
+                TCPReqRepHelloWorldRequester& requester)
+            : requester_(requester)
+        {
+        }
+
+        void onParticipantDiscovery(
+                eprosima::fastrtps::Participant* /*participant*/,
+                eprosima::fastrtps::rtps::ParticipantDiscoveryInfo&& info) override
+        {
+            if (info.status == eprosima::fastrtps::rtps::ParticipantDiscoveryInfo::DISCOVERED_PARTICIPANT)
+            {
+                requester_.matched();
+            }
+        }
+    private:
+        TCPReqRepHelloWorldRequester& requester_;
+    } participant_listener_;
 
     class ReplyListener : public eprosima::fastrtps::SubscriberListener
     {
-public:
+    public:
 
         ReplyListener(
                 TCPReqRepHelloWorldRequester& requester)
@@ -72,7 +94,7 @@ public:
             }
         }
 
-private:
+    private:
 
         ReplyListener& operator =(
                 const ReplyListener&) = delete;
@@ -82,7 +104,7 @@ private:
 
     class RequestListener : public eprosima::fastrtps::PublisherListener
     {
-public:
+    public:
 
         RequestListener(
                 TCPReqRepHelloWorldRequester& requester)
@@ -104,7 +126,7 @@ public:
             }
         }
 
-private:
+    private:
 
         RequestListener& operator =(
                 const RequestListener&) = delete;
@@ -114,6 +136,9 @@ private:
     } request_listener_;
 
     TCPReqRepHelloWorldRequester();
+    TCPReqRepHelloWorldRequester(
+            const std::string& file,
+            const std::string& profile);
     virtual ~TCPReqRepHelloWorldRequester();
     void init(
             int participantId,

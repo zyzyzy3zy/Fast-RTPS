@@ -197,7 +197,11 @@ if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER) AND fastcdr_FOUND)
             ${CMAKE_CURRENT_BINARY_DIR}/PubSubWriter.xml)
         configure_file(${CMAKE_CURRENT_SOURCE_DIR}/PubSubReader.xml.in
             ${CMAKE_CURRENT_BINARY_DIR}/PubSubReader.xml)
-
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/resources/tcp_config.xml
+            ${CMAKE_CURRENT_BINARY_DIR}/resources/tcp_config.xml
+            COPYONLY
+            )
         add_executable(BlackboxTests ${BLACKBOXTESTS_SOURCE})
         target_compile_definitions(BlackboxTests PRIVATE)
         target_include_directories(BlackboxTests PRIVATE ${GTEST_INCLUDE_DIRS})
