@@ -367,6 +367,10 @@ void PDPSimple::assignRemoteEndpoints(
     const NetworkFactory& network = mp_RTPSParticipant->network_factory();
     uint32_t endp = pdata->m_availableBuiltinEndpoints;
     uint32_t auxendp = endp;
+    if (endp == 0)
+    {
+        std::cout << "Machaking!!" << std::endl;
+    }
     bool use_multicast_locators = !mp_RTPSParticipant->getAttributes().builtin.avoid_builtin_multicast ||
             pdata->metatraffic_locators.unicast.empty();
     auxendp &= DISC_BUILTIN_ENDPOINT_PARTICIPANT_ANNOUNCER;

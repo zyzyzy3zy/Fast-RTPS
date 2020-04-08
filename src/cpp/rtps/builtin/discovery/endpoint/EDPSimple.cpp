@@ -172,7 +172,7 @@ void EDPSimple::processPersistentData(t_p_StatefulReader & reader, t_p_StatefulW
 
         if (!change_to_add->copy(change))
         {
-            logWarning(RTPS_EDP,"Problem copying CacheChange, received data is: " 
+            logWarning(RTPS_EDP,"Problem copying CacheChange, received data is: "
                 << change->serializedPayload.length << " bytes and max size in EDPServer reader"
                 << " is " << change_to_add->serializedPayload.max_size);
 
@@ -718,6 +718,10 @@ void EDPSimple::assignRemoteEndpoints(
     const NetworkFactory& network = mp_RTPSParticipant->network_factory();
     uint32_t endp = pdata.m_availableBuiltinEndpoints;
     uint32_t auxendp = endp;
+    if (auxendp == 0)
+    {
+        std::cout << "Machacado again" << std::endl;
+    }
     bool use_multicast_locators = !mp_PDP->getRTPSParticipant()->getAttributes().builtin.avoid_builtin_multicast ||
             pdata.metatraffic_locators.unicast.empty();
     auxendp &= DISC_BUILTIN_ENDPOINT_PUBLICATION_ANNOUNCER;

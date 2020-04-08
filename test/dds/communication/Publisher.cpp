@@ -266,9 +266,11 @@ int main(
     publisher_attributes.topic.topicKind = NO_KEY;
     publisher_attributes.topic.topicDataType = type->getName();
     publisher_attributes.topic.topicName = topic.str();
+    /*
     publisher_attributes.qos.m_liveliness.lease_duration = 3;
     publisher_attributes.qos.m_liveliness.announcement_period = 1;
     publisher_attributes.qos.m_liveliness.kind = eprosima::fastdds::dds::AUTOMATIC_LIVELINESS_QOS;
+    */
 
     Publisher* publisher = participant->create_publisher(PUBLISHER_QOS_DEFAULT, publisher_attributes, &listener);
     if (publisher == nullptr)
