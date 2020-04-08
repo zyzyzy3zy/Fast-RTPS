@@ -42,16 +42,13 @@ TestPublisher::TestPublisher()
     : m_iSamples(-1)
     , m_sentSamples(0)
     , m_iWaitTime(1000)
-    , m_Data(nullptr)
     , m_bInitialized(false)
     , using_typelookup_(false)
     , tls_callback_called_(false)
     , mp_participant(nullptr)
     , mp_publisher(nullptr)
-    , writer_(nullptr)
     , part_listener_(this)
     , m_pubListener(this)
-
 {
 }
 
@@ -78,14 +75,12 @@ bool TestPublisher::init(
     pqos.wire_protocol().builtin.typelookup_config.use_server = using_typelookup_;
     pqos.name(m_Name.c_str());
 
-    {
-        const std::lock_guard<std::mutex> lock(mutex_);
-        mp_participant = DomainParticipantFactory::get_instance()->create_participant(domain, pqos, &part_listener_);
+    mp_participant = DomainParticipantFactory::get_instance()->create_participant(domain, pqos, &part_listener_);
 
-        if (mp_participant == nullptr)
-        {
-            return false;
-        }
+
+    if (mp_participant == nullptr)
+    {
+        return false;
     }
 
     // CREATE THE PUBLISHER
@@ -154,7 +149,6 @@ TestPublisher::~TestPublisher()
 
 eprosima::fastdds::dds::DomainParticipant* TestPublisher::participant()
 {
-    const std::lock_guard<std::mutex> lock(mutex_);
     return mp_participant;
 }
 
@@ -266,7 +260,7 @@ void TestPublisher::PartListener::on_type_information_received(
             };
 
     std::cout << "Received type information: " << type_name << " on topic: " << topic_name << std::endl;
-    parent_->participant()->register_remote_type(type_information, type_name.to_string(), callback);
+    parent_->mp_participant->register_remote_type(type_information, type_name.to_string(), callback);
 }
 
 void TestPublisher::runThread()

@@ -44,8 +44,6 @@ using namespace eprosima::fastrtps::rtps;
 TestSubscriber::TestSubscriber()
     : mp_participant(nullptr)
     , mp_subscriber(nullptr)
-    , reader_(nullptr)
-    , m_Data(nullptr)
     , m_bInitialized(false)
     , using_typelookup_(false)
     , tls_callback_called_(false)
@@ -77,14 +75,10 @@ bool TestSubscriber::init(
     pqos.wire_protocol().builtin.typelookup_config.use_server = using_typelookup_;
     pqos.name(m_Name.c_str());
 
+    mp_participant = DomainParticipantFactory::get_instance()->create_participant(PParam, &part_listener_);
+    if (mp_participant == nullptr)
     {
-        const std::lock_guard<std::mutex> lock(mutex_);
-        mp_participant = DomainParticipantFactory::get_instance()->create_participant(domain, pqos, &part_listener_);
-        if (mp_participant == nullptr)
-        {
-            std::cout << "ERROR" << std::endl;
-            return false;
-        }
+        return false;
     }
 
     //CREATE THE SUBSCRIBER
@@ -157,7 +151,6 @@ TestSubscriber::~TestSubscriber()
 
 eprosima::fastdds::dds::DomainParticipant* TestSubscriber::participant()
 {
-    const std::lock_guard<std::mutex> lock(mutex_);
     return mp_participant;
 }
 
@@ -293,7 +286,7 @@ void TestSubscriber::PartListener::on_type_information_received(
             };
 
     std::cout << "Received type information: " << type_name << " on topic: " << topic_name << std::endl;
-    parent_->participant()->register_remote_type(type_information, type_name.to_string(), callback);
+    parent_->mp_participant->register_remote_type(type_information, type_name.to_string(), callback);
 }
 
 DataReader* TestSubscriber::create_datareader()

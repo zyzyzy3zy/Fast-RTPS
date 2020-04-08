@@ -52,8 +52,6 @@ public:
     void run(
             uint32_t number);
 
-    eprosima::fastdds::dds::DomainParticipant* participant();
-
 private:
 
     eprosima::fastdds::dds::DomainParticipant* mp_participant;
@@ -69,8 +67,6 @@ private:
     eprosima::fastrtps::ReaderQos qos_;
 
     eprosima::fastrtps::TopicAttributes topic_;
-
-    std::mutex mutex_;
 
 public:
 

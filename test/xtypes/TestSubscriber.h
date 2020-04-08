@@ -83,6 +83,20 @@ public:
         return m_subListener.n_samples;
     }
 
+    void block(std::function<bool()> checker)
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cv_.wait(lock, checker);
+    }
+
+    size_t block_for_at_least(size_t at_least)
+    {
+        block([this, at_least]() -> bool {
+                return samplesReceived() >= at_least;
+                });
+        return samplesReceived();
+    }
+
     eprosima::fastrtps::types::DynamicType_ptr discovered_type() const
     {
         return disc_type_;
@@ -94,8 +108,6 @@ public:
 
     void delete_datareader(
             eprosima::fastdds::dds::DataReader* reader);
-
-    eprosima::fastdds::dds::DomainParticipant* participant();
 
 private:
 

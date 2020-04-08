@@ -49,13 +49,10 @@ bool TypeLookupSubscriber::init()
     pqos.wire_protocol().builtin.use_WriterLivelinessProtocol = false;
     pqos.wire_protocol().builtin.discovery_config.leaseDuration = c_TimeInfinite;
     pqos.name("Participant_sub");
+    mp_participant = DomainParticipantFactory::get_instance()->create_participant(0, pqos, &m_listener);
+    if (mp_participant == nullptr)
     {
-        const std::lock_guard<std::mutex> lock(mutex_);
-        mp_participant = DomainParticipantFactory::get_instance()->create_participant(0, pqos, &m_listener);
-        if (mp_participant == nullptr)
-        {
-            return false;
-        }
+        return false;
     }
 
     // CREATE THE COMMON READER ATTRIBUTES
@@ -77,12 +74,6 @@ TypeLookupSubscriber::~TypeLookupSubscriber()
     DomainParticipantFactory::get_instance()->delete_participant(mp_participant);
     readers_.clear();
     datas_.clear();
-}
-
-eprosima::fastdds::dds::DomainParticipant* TypeLookupSubscriber::participant()
-{
-    const std::lock_guard<std::mutex> lock(mutex_);
-    return mp_participant;
 }
 
 void TypeLookupSubscriber::SubListener::on_subscription_matched(
@@ -212,7 +203,7 @@ void TypeLookupSubscriber::SubListener::on_type_information_received(
                 }
             };
 
-    subscriber_->participant()->register_remote_type(
+    subscriber_->mp_participant->register_remote_type(
         type_information,
         type_name.to_string(),
         callback);
