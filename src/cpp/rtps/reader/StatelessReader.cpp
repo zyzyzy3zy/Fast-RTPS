@@ -173,32 +173,6 @@ bool StatelessReader::change_received(
             return true;
         }
     }
-    else
-    {
-        ParameterList::readInstanceHandleFromCDRMsg(change, fastdds::dds::PID_PARTICIPANT_GUID);
-        GUID_t guid;
-        iHandle2GUID(guid, change->instanceHandle);
-        if (change->instanceHandle == c_InstanceHandle_Unknown)
-        {
-            // empty :D
-        }
-        else
-        {
-            if (change->kind == ALIVE && guid != getRTPSParticipant()->getGuid()) // Ignore self messages
-            {
-                std::cout << "-------- Recibo " << guid << std::endl;
-                std::cout << "-------- Soy " << getRTPSParticipant()->getGuid() << std::endl;
-                std::cout << "-------- Cambio ya recibido e ignorado... " << change->sequenceNumber << std::endl;
-                /*if (change->sequenceNumber == SequenceNumber_t(0,1)) // Discovery message?
-                {
-                    if (getListener() != nullptr)
-                    {
-                        getListener()->onNewCacheChangeAdded(this, change);
-                    }
-                }*/
-            }
-        }
-    }
 
     return false;
 }

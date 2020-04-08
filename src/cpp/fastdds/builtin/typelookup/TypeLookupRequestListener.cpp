@@ -86,6 +86,7 @@ void TypeLookupRequestListener::onNewCacheChangeAdded(
         {
             case TypeLookup_getTypes_Hash:
             {
+                std::cout << "LOOKS GOOD..." << std::endl;
                 const TypeLookup_getTypes_In in = request.data.getTypes();
                 TypeLookup_getTypes_Out out;
 
@@ -117,7 +118,10 @@ void TypeLookupRequestListener::onNewCacheChangeAdded(
                 reply->return_value.getType(result);
                 reply->header.requestId = request.header.requestId;
 
-                tlm_->send_reply(*reply);
+                if (!tlm_->send_reply(*reply))
+                {
+                    std::cout << "REPLY TYPES FAILED" << std::endl;
+                }
                 tlm_->reply_type_.delete_data(reply);
 
                 break;
@@ -138,14 +142,23 @@ void TypeLookupRequestListener::onNewCacheChangeAdded(
                 reply->return_value.getTypeDependencies(result);
                 reply->header.requestId = request.header.requestId;
 
-                tlm_->send_reply(*reply);
+                //tlm_->send_reply(*reply);
+                if (!tlm_->send_reply(*reply))
+                {
+                    std::cout << "REPLY DEPS FAILED" << std::endl;
+                }
                 tlm_->reply_type_.delete_data(reply);
 
                 break;
             }
             default:
+                std::cout << "BAD REQUEST..." << std::endl;
                 break;
         }
+    }
+    else
+    {
+        std::cout << "RECV REQUEST FAILED" << std::endl;
     }
     reader->getHistory()->remove_change(change);
 }

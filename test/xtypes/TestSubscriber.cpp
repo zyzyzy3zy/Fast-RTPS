@@ -75,7 +75,7 @@ bool TestSubscriber::init(
     pqos.wire_protocol().builtin.typelookup_config.use_server = using_typelookup_;
     pqos.name(m_Name.c_str());
 
-    mp_participant = DomainParticipantFactory::get_instance()->create_participant(PParam, &part_listener_);
+    mp_participant = DomainParticipantFactory::get_instance()->create_participant(domain, pqos, &part_listener_);
     if (mp_participant == nullptr)
     {
         return false;
@@ -147,11 +147,6 @@ TestSubscriber::~TestSubscriber()
         m_Type->deleteData(m_Data);
     }
     DomainParticipantFactory::get_instance()->delete_participant(mp_participant);
-}
-
-eprosima::fastdds::dds::DomainParticipant* TestSubscriber::participant()
-{
-    return mp_participant;
 }
 
 TestSubscriber::SubListener::SubListener(

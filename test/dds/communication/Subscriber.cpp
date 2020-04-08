@@ -97,6 +97,7 @@ public:
         std::function<void(const std::string&, const types::DynamicType_ptr)> callback =
                 [topic_name, type_name](const std::string& name, const types::DynamicType_ptr type)
                 {
+                    std::cout << "CALLBACK: " << type_name << std::endl;
                     if (nullptr != g_subscriber)
                     {
                         std::cout << "Discovered type: " << name << " from topic " << topic_name << std::endl;
@@ -141,10 +142,16 @@ public:
                     }
                 };
 
-        participant->register_remote_type(
-            type_information,
-            type_name.to_string(),
-            callback);
+        std::cout << "Register remote type: " << type_name << std::endl;
+
+        while (g_type == nullptr)
+        {
+            participant->register_remote_type(
+                type_information,
+                type_name.to_string(),
+                callback);
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
     }
 
 #if HAVE_SECURITY
@@ -344,10 +351,8 @@ int main(
     g_subscriber_attributes.topic.topicKind = NO_KEY;
     //g_subscriber_attributes.topic.topicDataType = type.getName();
     g_subscriber_attributes.topic.topicName = topic.str();
-    /*
     g_subscriber_attributes.qos.m_liveliness.lease_duration = 3;
     g_subscriber_attributes.qos.m_liveliness.kind = eprosima::fastdds::dds::AUTOMATIC_LIVELINESS_QOS;
-    */
     g_subscriber = participant->create_subscriber(SUBSCRIBER_QOS_DEFAULT, g_subscriber_attributes, &listener);
 
     if (g_subscriber == nullptr)

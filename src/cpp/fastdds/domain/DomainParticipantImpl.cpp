@@ -771,7 +771,10 @@ void DomainParticipantImpl::MyRTPSParticipantListener::on_type_dependencies_repl
             participant_->participant_, request_sample_id, dependencies);
     }
 
-    participant_->check_get_dependencies_request(request_sample_id, dependencies);
+    if (!participant_->check_get_dependencies_request(request_sample_id, dependencies))
+    {
+        std::cout << "SOLVING DEPENDENCIES FAILED??" << std::endl;
+    }
 }
 
 void DomainParticipantImpl::MyRTPSParticipantListener::on_type_information_received(
@@ -852,8 +855,10 @@ bool DomainParticipantImpl::register_remote_type(
             if (register_dynamic_type(dyn))
             {
                 //callback(type_name, dyn); // For plain types, don't call the callback
+                std::cout << "PLAIN TRUE" << std::endl;
                 return true;
             }
+            std::cout << "PLAIN FALSE" << std::endl;
             return false;
         }
         // If cannot create the dynamic type, probably is because it depend on unknown types.
@@ -878,8 +883,10 @@ bool DomainParticipantImpl::register_remote_type(
             if (register_dynamic_type(dyn))
             {
                 //callback(type_name, dyn); // If the type is already registered, don't call the callback.
+                std::cout << "ALREADY TRUE" << std::endl;
                 return true;
             }
+            std::cout << "ALREADY FALSE" << std::endl;
             return false;
         }
     }
@@ -899,12 +906,14 @@ bool DomainParticipantImpl::register_remote_type(
         // If any pending dependency exists, retrieve it.
         if (!dependencies.empty())
         {
+            std::cout << "SOLVING DEPENDENCIES" << std::endl;
             request_dependencies = get_type_dependencies(dependencies);
         }
 
         // If any pending TypeObject exists, retrieve it
         if (!retrieve_objects.empty())
         {
+            std::cout << "SOLVING TYPES" << std::endl;
             request_objects = get_types(retrieve_objects);
         }
 
@@ -935,6 +944,7 @@ bool DomainParticipantImpl::register_remote_type(
 
         return false;
     }
+    std::cout << "MEGA FAIL" << std::endl;
     return false;
 }
 
@@ -1265,4 +1275,9 @@ bool DomainParticipantImpl::has_active_entities()
         return true;
     }
     return false;
+}
+
+void DomainParticipantImpl::enable()
+{
+    rtps_participant_->enable();
 }

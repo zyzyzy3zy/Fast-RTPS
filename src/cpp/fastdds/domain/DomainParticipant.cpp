@@ -282,3 +282,10 @@ bool DomainParticipant::has_active_entities()
 {
     return impl_->has_active_entities();
 }
+
+fastrtps::types::ReturnCode_t DomainParticipant::enable()
+{
+    Entity::enable();
+    impl_->enable();
+    return fastrtps::types::ReturnCode_t::RETCODE_OK;
+}

@@ -417,6 +417,8 @@ public:
 
     bool has_active_entities();
 
+    virtual fastrtps::types::ReturnCode_t enable() override;
+
 private:
 
     RTPS_DllAPI DomainParticipant(

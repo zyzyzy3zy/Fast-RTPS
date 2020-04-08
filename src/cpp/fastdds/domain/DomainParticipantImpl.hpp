@@ -283,6 +283,8 @@ public:
      */
     bool has_active_entities();
 
+    void enable();
+
 private:
 
     //!Participant Qos

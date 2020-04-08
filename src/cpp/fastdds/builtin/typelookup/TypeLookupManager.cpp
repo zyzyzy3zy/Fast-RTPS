@@ -461,6 +461,7 @@ bool TypeLookupManager::create_endpoints()
         }
     }
 
+    std::cout << "TLM ready" << std::endl;
     return true;
 }
 /* TODO Implement if security is needed.
@@ -486,6 +487,11 @@ SampleIdentity TypeLookupManager::get_type_dependencies(
         if (send_request(*request))
         {
             id = request->header.requestId;
+            std::cout << "REQUEST DEPS OK" << std::endl;
+        }
+        else
+        {
+            std::cout << "REQUEST DEPS FAILED" << std::endl;
         }
         type.delete_data(request);
     }
@@ -507,6 +513,11 @@ SampleIdentity TypeLookupManager::get_types(
         if (send_request(*request))
         {
             id = request->header.requestId;
+            std::cout << "REQUEST TYPES OK" << std::endl;
+        }
+        else
+        {
+            std::cout << "REQUEST TYPES FAILED" << std::endl;
         }
         type.delete_data(request);
     }

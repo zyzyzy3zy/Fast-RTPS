@@ -147,11 +147,6 @@ TestPublisher::~TestPublisher()
     DomainParticipantFactory::get_instance()->delete_participant(mp_participant);
 }
 
-eprosima::fastdds::dds::DomainParticipant* TestPublisher::participant()
-{
-    return mp_participant;
-}
-
 void TestPublisher::waitDiscovery(
         bool expectMatch,
         int maxWait)

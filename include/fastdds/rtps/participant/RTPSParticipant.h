@@ -233,6 +233,8 @@ public:
      */
     uint32_t get_domain_id() const;
 
+    void enable();
+
 private:
 
     //!Pointer to the implementation.

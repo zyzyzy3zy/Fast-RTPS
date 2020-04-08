@@ -75,7 +75,8 @@ void RTPSDomain::stopAll()
 RTPSParticipant* RTPSDomain::createParticipant(
         uint32_t domain_id,
         const RTPSParticipantAttributes& attrs,
-        RTPSParticipantListener* listen)
+        RTPSParticipantListener* listen,
+        bool start_protocols)
 {
     logInfo(RTPS_PARTICIPANT, "");
 
@@ -195,7 +196,10 @@ RTPSParticipant* RTPSDomain::createParticipant(
     }
 
     // Start protocols
-    pimpl->enable();
+    if (start_protocols)
+    {
+        pimpl->enable();
+    }
     return p;
 }
 

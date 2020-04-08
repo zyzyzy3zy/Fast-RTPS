@@ -73,6 +73,7 @@ void TypeLookupReplyListener::onNewCacheChangeAdded(
         if (reply.header.requestId.writer_guid() != tlm_->get_builtin_request_writer_guid())
         {
             // This message isn't for us.
+            std::cout << "NOT FOR US" << std::endl;
             return;
         }
 
@@ -80,6 +81,7 @@ void TypeLookupReplyListener::onNewCacheChangeAdded(
         {
             case TypeLookup_getTypes_Hash:
             {
+                std::cout << "LOOKS GOOD REPLY" << std::endl;
                 const TypeLookup_getTypes_Out types = reply.return_value.getType().result();
                 for (auto pair : types.types)
                 {
@@ -110,8 +112,13 @@ void TypeLookupReplyListener::onNewCacheChangeAdded(
                 break;
             }
             default:
+                std::cout << "BAD REPLY..." << std::endl;
                 break;
         }
+    }
+    else
+    {
+        std::cout << "RECV REPLY FAILED" << std::endl;
     }
     reader->getHistory()->remove_change(change);
 }
