@@ -947,8 +947,8 @@ TEST_F(SHMTransportTests, port_mutex_deadlock_recover)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
-    SharedMemGlobal* shared_mem_global = shared_mem_manager.global_segment();
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
+    SharedMemGlobal* shared_mem_global = shared_mem_manager->global_segment();
     MockPortSharedMemGlobal port_mocker;
 
     port_mocker.remove_port_mutex(domain_name, 0);
@@ -985,16 +985,16 @@ TEST_F(SHMTransportTests, port_lock_read_exclusive)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
 
-    shared_mem_manager.remove_port(0);
+    shared_mem_manager->remove_port(0);
 
-    auto port = shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
-    ASSERT_THROW(shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive),
+    auto port = shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
+    ASSERT_THROW(shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive),
         std::exception);
 
     port.reset();
-    port = shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
+    port = shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
 }
 
 TEST_F(SHMTransportTests, robust_exclusive_lock)
@@ -1104,14 +1104,14 @@ TEST_F(SHMTransportTests, port_listener_dead_recover)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
-    SharedMemGlobal* shared_mem_global = shared_mem_manager.global_segment();
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
+    SharedMemGlobal* shared_mem_global = shared_mem_manager->global_segment();
 
     uint32_t listener1_index;
     auto port1 = shared_mem_global->open_port(0, 1, 1000);
     auto listener1 = port1->create_listener(&listener1_index);
 
-    auto listener2 = shared_mem_manager.open_port(0, 1, 1000)->create_listener();
+    auto listener2 = shared_mem_manager->open_port(0, 1, 1000)->create_listener();
 
     std::atomic<uint32_t> thread_listener2_state(0);
     std::thread thread_listener2([&]
@@ -1137,8 +1137,8 @@ TEST_F(SHMTransportTests, port_listener_dead_recover)
         }
     );
 
-    auto port_sender = shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::Write);
-    auto segment = shared_mem_manager.create_segment(1024, 16);
+    auto port_sender = shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::Write);
+    auto segment = shared_mem_manager->create_segment(1024, 16);
     auto buf = segment->alloc_buffer(1, std::chrono::steady_clock::now() + std::chrono::milliseconds(100));
     ASSERT_TRUE(buf != nullptr);
     memset(buf->data(), 0, buf->size());
@@ -1191,8 +1191,8 @@ TEST_F(SHMTransportTests, empty_cv_mutex_deadlocked_try_push)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
-    SharedMemGlobal* shared_mem_global = shared_mem_manager.global_segment();
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
+    SharedMemGlobal* shared_mem_global = shared_mem_manager->global_segment();
     MockPortSharedMemGlobal port_mocker;
 
     auto global_port = shared_mem_global->open_port(0, 1, 1000);
@@ -1229,8 +1229,8 @@ TEST_F(SHMTransportTests, dead_listener_sender_port_recover)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
-    SharedMemGlobal* shared_mem_global = shared_mem_manager.global_segment();
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
+    SharedMemGlobal* shared_mem_global = shared_mem_manager->global_segment();
     
     shared_mem_global->remove_port(0);
     auto deadlocked_port = shared_mem_global->open_port(0, 1, 1000);
@@ -1271,11 +1271,11 @@ TEST_F(SHMTransportTests, port_not_ok_listener_recover)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
-    SharedMemGlobal* shared_mem_global = shared_mem_manager.global_segment();
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
+    SharedMemGlobal* shared_mem_global = shared_mem_manager->global_segment();
 
     shared_mem_global->remove_port(0);
-    auto read_port = shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
+    auto read_port = shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
     auto listener = read_port->create_listener();
 
     std::atomic<uint32_t> stage(0u);
@@ -1293,8 +1293,8 @@ TEST_F(SHMTransportTests, port_not_ok_listener_recover)
 
     // Open the deadlocked port
     auto port = shared_mem_global->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::Write);
-    auto managed_port = shared_mem_manager.open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::Write);
-    auto data_segment = shared_mem_manager.create_segment(1, 1);
+    auto managed_port = shared_mem_manager->open_port(0, 1, 1000, SharedMemGlobal::Port::OpenMode::Write);
+    auto data_segment = shared_mem_manager->create_segment(1, 1);
     
     MockPortSharedMemGlobal port_mocker;
     port_mocker.set_port_not_ok(*port);
@@ -1318,19 +1318,19 @@ TEST_F(SHMTransportTests, buffer_recover)
 {
     const std::string domain_name("SHMTests");
 
-    SharedMemManager shared_mem_manager(domain_name);
+    auto shared_mem_manager = SharedMemManager::create(domain_name);
     
-    auto segment = shared_mem_manager.create_segment(3,3);
+    auto segment = shared_mem_manager->create_segment(3,3);
 
-    shared_mem_manager.remove_port(1);
-    auto pub_sub1_write = shared_mem_manager.open_port(1, 8, 1000, SharedMemGlobal::Port::OpenMode::Write);
+    shared_mem_manager->remove_port(1);
+    auto pub_sub1_write = shared_mem_manager->open_port(1, 8, 1000, SharedMemGlobal::Port::OpenMode::Write);
 
-    shared_mem_manager.remove_port(2);
-    auto pub_sub2_write = shared_mem_manager.open_port(2, 8, 1000,SharedMemGlobal::Port::OpenMode::Write);
+    shared_mem_manager->remove_port(2);
+    auto pub_sub2_write = shared_mem_manager->open_port(2, 8, 1000,SharedMemGlobal::Port::OpenMode::Write);
 
-    auto sub1_read = shared_mem_manager.open_port(1, 8, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
+    auto sub1_read = shared_mem_manager->open_port(1, 8, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
 
-    auto sub2_read = shared_mem_manager.open_port(2, 8, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
+    auto sub2_read = shared_mem_manager->open_port(2, 8, 1000, SharedMemGlobal::Port::OpenMode::ReadExclusive);
     
     bool exit_listeners = false;
 
