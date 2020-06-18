@@ -56,6 +56,21 @@ def cmd(install_path, setup_script_path=Path(), args=''):
 
 def test_fastdds_installed(install_path):
     """Test that fastdds is installed and run."""
+    print('test_fastdds_installed: ' + cmd(install_path))
+    print('********************')
+    s = 'ls -la "/Volumes/ExtremeSSD/jenkins/workspace/FastRTPS Manual Mac/install/fastrtps/bin"'
+    subprocess.call(s, shell=True)
+    s = 'ls -la "/Volumes/ExtremeSSD/jenkins/workspace/FastRTPS Manual Mac/install/fastrtps"'
+    subprocess.call(s, shell=True)
+    s = 'ls -la "/Volumes/ExtremeSSD/jenkins/workspace/FastRTPS Manual Mac/install"'
+    subprocess.call(s, shell=True)
+    s = 'tree /Volumes/ExtremeSSD/jenkins/workspace'
+    subprocess.call(s, shell=True)
+    print('********************')
+    #s = 'tree "\\"/Volumes/ExtremeSSD/jenkins/workspace/FastRTPS Manual Mac/install/fastrtps\\"'
+    #subprocess.call(s, shell=True)
+
+    subprocess.call(cmd(install_path), shell=True)
     ret = subprocess.call(cmd(install_path), shell=True)
     if 0 != ret:
         print('test_fastdds_installed FAILED')
@@ -65,6 +80,7 @@ def test_fastdds_installed(install_path):
 def test_fastdds_shm(install_path):
     """Test that shm command run."""
     args = ' shm clean'
+    print('test_fastdds_shm: ' + cmd(install_path=install_path, args=args))
     ret = subprocess.call(cmd(
         install_path=install_path, args=args), shell=True)
     if 0 != ret:
@@ -75,6 +91,9 @@ def test_fastdds_shm(install_path):
 def test_fastdds_discovery(install_path, setup_script_path):
     """Test that discovery command run."""
     args = ' discovery'
+    print('test_fastdds_discovery: ' + cmd(install_path=install_path,
+            setup_script_path=setup_script_path,
+            args=args))
     ret = subprocess.call(
         cmd(install_path=install_path,
             setup_script_path=setup_script_path,
@@ -88,18 +107,18 @@ def test_fastdds_discovery(install_path, setup_script_path):
 
 def get_paths(install_path):
     """Adjust the install path when --merge-install has been used."""
-    tool_install_path = install_path / 'bin'
+    tool_install_path = (install_path / 'bin').resolve()
 
-    if not os.path.exists(tool_install_path.resolve()):
-        tool_install_path = tool_install_path / '..' / 'bin'
-        if not os.path.exists(tool_install_path.resolve()):
+    if not os.path.exists(tool_install_path):
+        tool_install_path = (tool_install_path / '..' / 'bin').resolve()
+        if not os.path.exists(tool_install_path):
             print(f'{tool_install_path} NOT FOUND')
             sys.exit(1)
 
-    setup_script_path = install_path / setup_script_name()
-    if not os.path.exists(str(setup_script_path.resolve())):
-        setup_script_path = install_path / '..' / setup_script_name()
-        if not os.path.exists(str(setup_script_path.resolve())):
+    setup_script_path = (install_path / setup_script_name()).resolve()
+    if not os.path.exists(str(setup_script_path)):
+        setup_script_path = (install_path / '..' / setup_script_name()).resolve()
+        if not os.path.exists(str(setup_script_path)):
             print(f'setup_script NOT FOUND')
             sys.exit(1)
 

@@ -34,15 +34,11 @@ if (MSVC)
         DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
     )
 
-
 else()
 
     # POSIX
-    install(CODE "execute_process( \
-        COMMAND ${CMAKE_COMMAND} -E create_symlink \
-        ../tools/fastdds/fastdds.py \
-        ${CMAKE_INSTALL_PREFIX}/bin/fastdds \
-        )"
-    )
+    set(fastdds_tool_target "../tools/fastdds/fastdds.py")
+    set(fastdds_tool_link ${CMAKE_INSTALL_PREFIX}/bin/fastdds)
+    install(CODE "execute_process(COMMAND ln -s \"${fastdds_tool_target}\" \"${fastdds_tool_link}\")")
 
 endif()
