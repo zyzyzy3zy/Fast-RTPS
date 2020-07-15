@@ -387,6 +387,11 @@ private:
 
     OfferedIncompatibleQosStatus& update_offered_incompatible_qos(
             PolicyMask incompatible_policies);
+
+    void set_fragment_size_on_change(
+            fastrtps::rtps::WriteParams& wparams,
+            fastrtps::rtps::CacheChange_t* ch,
+            const uint32_t& high_mark_for_frag);
 };
 
 } /* namespace dds */
