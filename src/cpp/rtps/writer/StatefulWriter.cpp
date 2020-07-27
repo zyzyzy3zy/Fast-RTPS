@@ -1657,14 +1657,7 @@ bool StatefulWriter::try_remove_change(
 
     {
         std::lock_guard<RecursiveTimedMutex> guard(mp_mutex);
-        for (ReaderProxy* it : matched_readers_)
-        {
-            SequenceNumber_t reader_low_mark = it->changes_low_mark();
-            if (min_low_mark == SequenceNumber_t() || reader_low_mark < min_low_mark)
-            {
-                min_low_mark = reader_low_mark;
-            }
-        }
+        min_low_mark = next_all_acked_notify_sequence_;
     }
 
     SequenceNumber_t calc = min_low_mark < get_seq_num_min() ? SequenceNumber_t() :
