@@ -69,7 +69,7 @@ void RemoteParticipantLeaseDuration::event(EventCode code, const char* msg)
         auto real_lease_tm = last_received_message_tm_ + lease_duration_;
         if (now > real_lease_tm)
         {
-            logInfo(RTPS_LIVELINESS,"RTPSParticipant no longer ALIVE, trying to remove: "
+            logWarning(RTPS_LIVELINESS, "RTPSParticipant no longer ALIVE, trying to remove: "
                     << mp_participantProxyData->m_guid);
 
             // This assignment must be before removeRemoteParticipant because mp_participantProxyData is deleted there.
