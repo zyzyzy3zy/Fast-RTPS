@@ -17,7 +17,7 @@ Log::Resources::Resources() : mLogging(false),
         mWork(false),
         mFilenames(false),
         mFunctions(true),
-        mVerbosity(Log::Error)
+        mVerbosity(Log::Warning)
 {
     mResources.mConsumers.emplace_back(new StdoutConsumer);
 }
