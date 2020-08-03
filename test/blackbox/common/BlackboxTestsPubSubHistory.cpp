@@ -17,6 +17,7 @@
 #include "PubSubReader.hpp"
 #include "PubSubWriter.hpp"
 
+#include <fastrtps/transport/test_UDPv4Transport.h>
 #include <fastrtps/xmlparser/XMLProfileManager.h>
 #include <gtest/gtest.h>
 
@@ -561,6 +562,278 @@ TEST(BlackBox, PubSubAsReliableKeepLastReaderSmallDepthWithKey)
 
         data = reader.data_not_received();
     }
+}
+
+// Test created to check bug #8945
+TEST_P(PubSubHistory, WriterWithoutReadersTransientLocal)
+{
+    PubSubWriter<HelloWorldType> writer(TEST_TOPIC_NAME);
+
+    writer.
+    history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+    durability_kind(eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS).
+    max_blocking_time({0, 0}).
+    resource_limits_allocated_samples(2).
+    resource_limits_max_samples(2).
+    history_depth(2).init();
+
+    ASSERT_TRUE(writer.isInitialized());
+
+    {
+        // Remove the reader
+        PubSubReader<HelloWorldType> reader(TEST_TOPIC_NAME);
+        reader.reliability(RELIABLE_RELIABILITY_QOS).init();
+        ASSERT_TRUE(reader.isInitialized());
+        // Wait for discovery.
+        writer.wait_discovery();
+        reader.wait_discovery();
+    }
+
+    auto data = default_helloworld_data_generator();
+
+    //reader.startReception(data);
+
+    // Send data
+    writer.send(data);
+    // In this test all data should be sent.
+    ASSERT_TRUE(data.empty());
+    // Block reader until reception finished or timeout.
+    //reader.block_for_at_least(2);
+}
+
+// Test created to check bug #8945
+/*
+#if HAVE_SQLITE3
+TEST_P(PubSubHistory, WriterWithoutReadersTransient)
+{
+    // Configure Writer Properties
+    PropertyPolicy writer_policy;
+    writer_policy.properties().emplace_back("dds.persistence.plugin", "builtin.SQLITE3");
+    writer_policy.properties().emplace_back("dds.persistence.sqlite3.filename", "persistence.db");
+    writer_policy.properties().emplace_back("dds.persistence.guid", "77.72.69.74.65.72.5f.70.65.72.73.5f|67.75.69.64");
+
+    // Create DataWriter and configure the durability and reliability QoS
+    PubSubWriter<HelloWorldType> writer(TEST_TOPIC_NAME);
+    writer.entity_property_policy(writer_policy);
+
+    writer.
+    history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+    durability_kind(eprosima::fastdds::dds::TRANSIENT_DURABILITY_QOS).
+    history_depth(2).init();
+
+    ASSERT_TRUE(writer.isInitialized());
+
+    {
+        // Remove the reader
+        PubSubReader<HelloWorldType> reader(TEST_TOPIC_NAME);
+        reader.reliability(RELIABLE_RELIABILITY_QOS).init();
+        ASSERT_TRUE(reader.isInitialized());
+        // Wait for discovery.
+        writer.wait_discovery();
+        reader.wait_discovery();
+    }
+
+    auto data = default_helloworld_data_generator();
+
+    //reader.startReception(data);
+
+    // Send data
+    writer.send(data);
+    // In this test all data should be sent.
+    ASSERT_TRUE(data.empty());
+    // Block reader until reception finished or timeout.
+    //reader.block_for_at_least(2);
+}
+#endif // HAVE_SQLITE3
+*/
+
+// Test created to check bug #8945
+TEST(PubSubHistory, WriterWithoutReadersVolatile)
+{
+    auto testTransport = std::make_shared<test_UDPv4TransportDescriptor>();
+    PubSubWriter<HelloWorldType> writer(TEST_TOPIC_NAME);
+
+    writer.
+    reliability(RELIABLE_RELIABILITY_QOS).
+    disable_builtin_transport().
+    add_user_transport_to_pparams(testTransport).
+    history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+    durability_kind(eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS).
+    //durability_kind(eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS).
+    history_depth(2).
+    resource_limits_allocated_samples(0).
+    resource_limits_max_samples(2).
+    max_blocking_time(0).init();
+
+    ASSERT_TRUE(writer.isInitialized());
+
+    auto data = default_helloworld_data_generator();
+
+    // Send data
+    writer.send(data);
+    // All data should be sent is there is no reader.
+    ASSERT_TRUE(data.empty());
+
+    {
+        PubSubReader<HelloWorldType> reader(TEST_TOPIC_NAME);
+        reader.reliability(RELIABLE_RELIABILITY_QOS).
+        durability_kind(TRANSIENT_LOCAL_DURABILITY_QOS).
+        history_depth(1).
+        resource_limits_allocated_samples(0).
+        resource_limits_max_samples(1).init();
+        ASSERT_TRUE(reader.isInitialized());
+        // Wait for discovery.
+        writer.wait_discovery();
+        reader.wait_discovery();
+
+        // Regenerate data
+        data = default_helloworld_data_generator();
+        reader.startReception(data);
+        // We expect to receive 9 and 10
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        reader.destroy();
+
+        //test_UDPv4Transport::test_UDPv4Transport_ShutdownAllNetwork = true;
+        writer.send(data);
+        /*
+        uint64_t size = data.size();
+        for (uint i = 0; i < size; ++i)
+        {
+            ASSERT_TRUE(writer.send_sample(data.front()));
+            data.pop_front();
+        }
+        */
+        // All data should be sent is there is no reader.
+        ASSERT_TRUE(data.empty());
+    }
+
+    // Regenerate data
+    data = default_helloworld_data_generator();
+    writer.send(data);
+    ASSERT_TRUE(data.empty());
+
+
+    /* TODO:
+La forma fácil de probar el 8945 es usando keep_all, con un resource_limits, y max_blocking_time 0
+Si la historia se llena cuando no debería, la llamada a write retornará false
+
+- Esperas que llegue un reader
+- Llenas el history
+- Compruebas que el write se bloquearía (retorna false si da timeout el max_blocking_time)
+- Apagas el reader
+- Compruebas que el write no se bloquea
+- Escribes tantas veces como hueco tenga el history (resource_limits.max_samples)
+- Compruebas que el write no se bloquea
+
+Si quieres puedes añadir que antes de que llegue el reader tienes que poder llenar el history entero varias veces sin bloquearte
+El stop reception desactiva el listener, pero no el reader
+*/
+
+}
+
+TEST(PubSubHistory, HEXAGON_TEST)
+{
+    // Configure Writer Properties
+    PropertyPolicy writer_policy;
+    writer_policy.properties().emplace_back("dds.persistence.plugin", "builtin.SQLITE3");
+    writer_policy.properties().emplace_back("dds.persistence.sqlite3.filename", "persistence.db");
+    writer_policy.properties().emplace_back("dds.persistence.guid", "77.72.69.74.65.72.5f.70.65.72.73.5f|67.75.69.64");
+    PubSubWriter<HelloWorldType> writer(TEST_TOPIC_NAME);
+
+    writer.
+    entity_property_policy(writer_policy).
+    reliability(RELIABLE_RELIABILITY_QOS).
+    history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+    //durability_kind(eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS).
+    durability_kind(eprosima::fastdds::dds::TRANSIENT_DURABILITY_QOS).
+    asynchronously(ASYNCHRONOUS_PUBLISH_MODE).
+    heartbeat_period_seconds(2).
+    heartbeat_period_nanosec(200*1000*1000).
+    //durability_kind(eprosima::fastdds::dds::VOLATILE_DURABILITY_QOS).
+    //history_depth(1300).
+    resource_limits_allocated_samples(1300).
+    resource_limits_max_samples(1300).
+    //max_blocking_time(0).
+    init();
+
+    ASSERT_TRUE(writer.isInitialized());
+
+    auto data = default_helloworld_data_generator(1800);
+
+    std::thread reader_thread([&]()
+    {
+        PropertyPolicy reader_policy;
+        reader_policy.properties().emplace_back("dds.persistence.plugin", "builtin.SQLITE3");
+        reader_policy.properties().emplace_back("dds.persistence.sqlite3.filename", "r1.db");
+        reader_policy.properties().emplace_back("dds.persistence.guid", "77.72.69.74.65.72.5f.70.65.72.73.5f|67.75.69.65");
+
+        PubSubReader<HelloWorldType> reader(TEST_TOPIC_NAME);
+        reader.
+        entity_property_policy(reader_policy).
+        reliability(RELIABLE_RELIABILITY_QOS).
+        history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+        //durability_kind(eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS).
+        durability_kind(eprosima::fastdds::dds::TRANSIENT_DURABILITY_QOS).
+        resource_limits_allocated_samples(1300).
+        resource_limits_max_samples(1300).
+        init();
+        ASSERT_TRUE(reader.isInitialized());
+        auto rec_data(data);
+        reader.startReception(rec_data);
+        //reader.startReception(data);
+
+        //writer.wait_discovery();
+        reader.wait_discovery();
+
+        std::cout << "--- READER READY ---" << std::endl;
+        reader.block_for_at_least(1400);
+        std::cout << "--- READER FINISHED ---" << std::endl;
+    });
+
+    std::thread reader_thread_2([&]()
+    {
+        PropertyPolicy reader_policy;
+        reader_policy.properties().emplace_back("dds.persistence.plugin", "builtin.SQLITE3");
+        reader_policy.properties().emplace_back("dds.persistence.sqlite3.filename", "r2.db");
+        reader_policy.properties().emplace_back("dds.persistence.guid", "77.72.69.74.65.72.5f.70.65.72.73.5f|67.75.69.66");
+
+        PubSubReader<HelloWorldType> reader(TEST_TOPIC_NAME);
+        reader.
+        entity_property_policy(reader_policy).
+        reliability(RELIABLE_RELIABILITY_QOS).
+        history_kind(eprosima::fastrtps::KEEP_LAST_HISTORY_QOS).
+        //durability_kind(eprosima::fastdds::dds::TRANSIENT_LOCAL_DURABILITY_QOS).
+        durability_kind(eprosima::fastdds::dds::TRANSIENT_DURABILITY_QOS).
+        resource_limits_allocated_samples(1300).
+        resource_limits_max_samples(1300).
+        init();
+        ASSERT_TRUE(reader.isInitialized());
+        auto rec_data(data);
+        reader.startReception(rec_data);
+        //reader.startReception(data);
+
+        //writer.wait_discovery();
+        reader.wait_discovery();
+
+        std::cout << "--- READER READY ---" << std::endl;
+        reader.block_for_at_least(1400);
+        std::cout << "--- READER FINISHED ---" << std::endl;
+    });
+
+    std::cout << "--- Waiting discovery ---" << std::endl;
+    writer.wait_discovery(2);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    writer.send(data, 1);
+    ASSERT_TRUE(data.empty());
+    std::cout << "--- ALL DATA SENT ---" << std::endl;
+    reader_thread.join();
+    reader_thread_2.join();
+    data = default_helloworld_data_generator(1300);
+    std::cout << "--- SECOND DATA ---" << std::endl;
+    writer.send(data, 1);
+    std::cout << "--- SECOND DATA SENT ---" << std::endl;
+    ASSERT_TRUE(data.empty());
 }
 
 INSTANTIATE_TEST_CASE_P(PubSubHistory,

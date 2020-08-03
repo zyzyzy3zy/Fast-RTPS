@@ -43,6 +43,8 @@
 #include <gtest/gtest.h>
 #include <thread>
 
+//#include "../../src/cpp/fastrtps_deprecated/publisher/PublisherImpl.h"
+
 using eprosima::fastrtps::rtps::IPLocator;
 using eprosima::fastrtps::rtps::UDPv4TransportDescriptor;
 
@@ -982,6 +984,11 @@ public:
         return listener_.times_liveliness_lost();
     }
 
+    eprosima::fastrtps::PublisherImpl* get_pub_impl()
+    {
+        return reinterpret_cast<eprosima::fastrtps::PublisherImpl*>(publisher_);
+    }
+
 private:
 
     void participant_matched()
@@ -1268,4 +1275,115 @@ private:
 #endif
 };
 
+/*
+namespace eprosima {
+namespace fastrtps {
+
+PublisherImpl::PublisherImpl(
+        ParticipantImpl* p,
+        fastdds::dds::TopicDataType* ptype,
+        const PublisherAttributes& att,
+        PublisherListener* p_listen)
+    : m_att(att)
+    , m_history(att.topic, 0, att.historyMemoryPolicy)
+    , m_writerListener(nullptr)
+{}
+
+PublisherImpl::~PublisherImpl()
+{}
+
+bool PublisherImpl::create_new_change(
+        rtps::ChangeKind_t kind,
+        void* Data)
+{}
+
+bool PublisherImpl::create_new_change_with_params(
+        rtps::ChangeKind_t kind,
+        void* Data,
+        rtps::WriteParams& wparams)
+{}
+
+bool PublisherImpl::create_new_change_with_params(
+        rtps::ChangeKind_t kind,
+        void* Data,
+        rtps::WriteParams& wparams,
+        const rtps::InstanceHandle_t& handle)
+{}
+
+rtps::InstanceHandle_t PublisherImpl::register_instance(
+        void* instance)
+{}
+
+bool PublisherImpl::unregister_instance(
+        void* instance,
+        const rtps::InstanceHandle_t& handle,
+        bool dispose)
+{}
+
+bool PublisherImpl::removeMinSeqChange()
+{}
+
+bool PublisherImpl::removeAllChange(
+        size_t* removed)
+{}
+
+const rtps::GUID_t& PublisherImpl::getGuid()
+{}
+
+bool PublisherImpl::updateAttributes(
+        const PublisherAttributes& att)
+{}
+
+bool PublisherImpl::wait_for_all_acked(
+        const Duration_t& max_wait)
+{}
+
+void PublisherImpl::get_offered_deadline_missed_status(
+        OfferedDeadlineMissedStatus& status)
+{}
+
+void PublisherImpl::get_liveliness_lost_status(
+        LivelinessLostStatus& status)
+{}
+
+void PublisherImpl::assert_liveliness()
+{}
+
+    void PublisherImpl::PublisherWriterListener::onWriterMatched(
+            rtps::RTPSWriter* writer,
+            rtps::MatchingInfo& info)
+{}
+
+    void PublisherImpl::PublisherWriterListener::onWriterChangeReceivedByAll(
+            rtps::RTPSWriter* writer,
+            rtps::CacheChange_t* change)
+{}
+
+    void PublisherImpl::PublisherWriterListener::on_liveliness_lost(
+            rtps::RTPSWriter* writer,
+            const LivelinessLostStatus& status)
+{}
+
+bool PublisherImpl::deadline_missed()
+{}
+
+bool PublisherImpl::deadline_timer_reschedule()
+{}
+
+bool PublisherImpl::lifespan_expired()
+{}
+
+class TestPublisherImpl : public PublisherImpl
+{
+public:
+    PublisherHistory* get_history()
+    {
+        return reinterpret_cast<PublisherHistory*>(*(this + sizeof(void*) * 3 + sizeof(PublisherAttributes)));
+    }
+
+};
+
+} // fastrtps
+} // eprosima
+*/
 #endif // _TEST_BLACKBOX_PUBSUBWRITER_HPP_
