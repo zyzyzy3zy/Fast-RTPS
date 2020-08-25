@@ -28,21 +28,35 @@
  * not covered by the current verbosity level, there is some overhead on calling a log macro. For maximum performance, you can
  * opt out of logging any particular level by defining the following symbols:
  *
+ * * define LOG_NO_QUIET
+ * * define LOG_NO_FATAL
+ * * define LOG_NO_CRITICAL
  * * define LOG_NO_ERROR
+ * * define LOG_NO_USER
  * * define LOG_NO_WARNING
  * * define LOG_NO_INFO
+ * * define LOG_NO_DEBUG
  *
- * Additionally. the lowest level (Info) is disabled by default on release branches.
+ * Additionally. the lowest level (Debug) is disabled by default on release branches.
  */
 
 // Logging API:
 
-//! Logs an info message. Disable it through Log::SetVerbosity, define LOG_NO_INFO, or being in a release branch
+//! Logs a debug message. Disable it through Log::SetVerbosity, Log::SetVerbosityMask, define LOG_NO_DEBUG, or being in a release branch
+#define logDebug(cat, msg) logDebug_(cat, msg)
+//! Logs an info message. Disable it through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_INFO
 #define logInfo(cat, msg) logInfo_(cat, msg)
-//! Logs a warning. Disable reporting through Log::SetVerbosity or define LOG_NO_WARNING
+//! Logs a warning. Disable reporting through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_WARNING
 #define logWarning(cat, msg) logWarning_(cat, msg)
-//! Logs an error. Disable reporting through define LOG_NO_ERROR
+//! Logs an user defined message. Disable reporting through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_USER
+#define logUser(cat, msg) logUser_(cat, msg)
+//! Logs an error. Disable reporting through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_ERROR
 #define logError(cat, msg) logError_(cat, msg)
+//! Logs a critical error. Disable reporting through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_CRITICAL
+#define logCritical(cat, msg) logCritical_(cat, msg)
+//! Logs a fatal error. Disable reporting through Log::SetVerbosity, Log::SetVerbosityMask or define LOG_NO_FATAL
+#define logFatal(cat, msg) logFatal_(cat, msg)
+
 
 namespace eprosima {
 namespace fastdds {
@@ -256,27 +270,105 @@ protected:
 #define __func__ __FUNCTION__
 #endif // if defined(WIN32)
 
-#ifndef LOG_NO_ERROR
-#define logError_(cat, msg)                                                                          \
-    {                                                                                                \
-        using namespace eprosima::fastdds::dds;                                                      \
-        std::stringstream ss;                                                                        \
-        ss << msg;                                                                                   \
-        Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::Error); \
+#ifndef LOG_NO_FATAL
+#define logFatal_(cat, msg)                                                                              \
+    {                                                                                                    \
+        using namespace eprosima::fastdds::dds;                                                          \
+        if (Log::GetVerbosity() & Log::Kind::Fatal)                                                      \
+        {                                                                                                \
+            std::stringstream ss;                                                                        \
+            ss << msg;                                                                                   \
+            Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::Fatal); \
+        }                                                                                                \
     }
 #elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
-#define logError_(cat, msg)        \
-    {                              \
-        auto tmp_lambda = [&]()    \
+#define logFatal_(cat, msg)             \
+    {                                      \
+        auto tmp_lambda = [&]()            \
                 {                          \
                     std::stringstream ss;  \
                     ss << msg;             \
                 };                         \
-        (void)tmp_lambda;          \
+        (void)tmp_lambda;                  \
+    }
+#else
+#define logFatal_(cat, msg)
+#endif //ifndef LOG_NO_FATAL
+
+#ifndef LOG_NO_CRITICAL
+#define logCritical_(cat, msg)                                                                              \
+    {                                                                                                       \
+        using namespace eprosima::fastdds::dds;                                                             \
+        if (Log::GetVerbosity() & Log::Kind::Critical)                                                      \
+        {                                                                                                   \
+            std::stringstream ss;                                                                           \
+            ss << msg;                                                                                      \
+            Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::Critical); \
+        }                                                                                                   \
+    }
+#elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
+#define logCritical_(cat, msg)             \
+    {                                      \
+        auto tmp_lambda = [&]()            \
+                {                          \
+                    std::stringstream ss;  \
+                    ss << msg;             \
+                };                         \
+        (void)tmp_lambda;                  \
+    }
+#else
+#define logCritical_(cat, msg)
+#endif //ifndef LOG_NO_CRITICAL
+
+#ifndef LOG_NO_ERROR
+#define logError_(cat, msg)                                                                              \
+    {                                                                                                    \
+        using namespace eprosima::fastdds::dds;                                                          \
+        if (Log::GetVerbosity() & Log::Kind::Error)                                                      \
+        {                                                                                                \
+            std::stringstream ss;                                                                        \
+            ss << msg;                                                                                   \
+            Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::Error); \
+        }                                                                                                \
+    }
+#elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
+#define logError_(cat, msg)                \
+    {                                      \
+        auto tmp_lambda = [&]()            \
+                {                          \
+                    std::stringstream ss;  \
+                    ss << msg;             \
+                };                         \
+        (void)tmp_lambda;                  \
     }
 #else
 #define logError_(cat, msg)
 #endif // ifndef LOG_NO_ERROR
+
+#ifndef LOG_NO_USER
+#define logUser_(cat, msg)                                                                              \
+    {                                                                                                   \
+        using namespace eprosima::fastdds::dds;                                                         \
+        if (Log::GetVerbosity() & Log::Kind::User)                                                      \
+        {                                                                                               \
+            std::stringstream ss;                                                                       \
+            ss << msg;                                                                                  \
+            Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::User); \
+        }                                                                                               \
+    }
+#elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
+#define logUser_(cat, msg)              \
+    {                                      \
+        auto tmp_lambda = [&]()            \
+                {                          \
+                    std::stringstream ss;  \
+                    ss << msg;             \
+                };                         \
+        (void)tmp_lambda;                  \
+    }
+#else
+#define logUser_(cat, msg)
+#endif // ifndef LOG_NO_WARNING
 
 #ifndef LOG_NO_WARNING
 #define logWarning_(cat, msg)                                                                              \
@@ -290,21 +382,20 @@ protected:
         }                                                                                                  \
     }
 #elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
-#define logWarning_(cat, msg)      \
-    {                              \
-        auto tmp_lambda = [&]()    \
+#define logWarning_(cat, msg)              \
+    {                                      \
+        auto tmp_lambda = [&]()            \
                 {                          \
                     std::stringstream ss;  \
                     ss << msg;             \
                 };                         \
-        (void)tmp_lambda;          \
+        (void)tmp_lambda;                  \
     }
 #else
 #define logWarning_(cat, msg)
 #endif // ifndef LOG_NO_WARNING
 
-#if (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG)) && (defined(_DEBUG) || defined(__DEBUG)) && \
-    (!defined(LOG_NO_INFO))
+#ifndef LOG_NO_INFO
 #define logInfo_(cat, msg)                                                                              \
     {                                                                                                   \
         using namespace eprosima::fastdds::dds;                                                         \
@@ -316,18 +407,44 @@ protected:
         }                                                                                               \
     }
 #elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
-#define logInfo_(cat, msg)         \
-    {                              \
-        auto tmp_lambda = [&]()    \
+#define logInfo_(cat, msg)                 \
+    {                                      \
+        auto tmp_lambda = [&]()            \
                 {                          \
                     std::stringstream ss;  \
                     ss << msg;             \
                 };                         \
-        (void)tmp_lambda;          \
+        (void)tmp_lambda;                  \
     }
 #else
 #define logInfo_(cat, msg)
-#endif // if (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG)) && (defined(_DEBUG) || defined(__DEBUG)) && (!defined(LOG_NO_INFO))
+#endif // ifndef LOG_NO_INFO
+
+#if (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG)) && (defined(_DEBUG) || defined(__DEBUG)) && \
+    (!defined(LOG_NO_DEBUG))
+#define logDebug_(cat, msg)                                                                              \
+    {                                                                                                    \
+        using namespace eprosima::fastdds::dds;                                                          \
+        if (Log::GetVerbosity() & Log::Kind::Debug)                                                      \
+        {                                                                                                \
+            std::stringstream ss;                                                                        \
+            ss << msg;                                                                                   \
+            Log::QueueLog(ss.str(), Log::Context{__FILE__, __LINE__, __func__, #cat}, Log::Kind::Debug); \
+        }                                                                                                \
+    }
+#elif (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG))
+#define logDebug_(cat, msg)                \
+    {                                      \
+        auto tmp_lambda = [&]()            \
+                {                          \
+                    std::stringstream ss;  \
+                    ss << msg;             \
+                };                         \
+        (void)tmp_lambda;                  \
+    }
+#else
+#define logDebug_(cat, msg)
+#endif // if (defined(__INTERNALDEBUG) || defined(_INTERNALDEBUG)) && (defined(_DEBUG) || defined(__DEBUG)) && (!defined(LOG_NO_DEBUG))
 
 } // namespace dds
 } // namespace fastdds
