@@ -315,15 +315,23 @@ void LogConsumer::print_header(
         bool color) const
 {
     std::string c_b_color = (!color) ? "" :
+            (entry.kind == Log::Kind::Fatal) ? C_B_RED :
+            (entry.kind == Log::Kind::Critical) ? C_B_RED :
             (entry.kind == Log::Kind::Error) ? C_B_RED :
+            (entry.kind == Log::Kind::User) ? C_B_CYAN :
             (entry.kind == Log::Kind::Warning) ? C_B_YELLOW :
-            (entry.kind == Log::Kind::Info) ? C_B_GREEN : "";
+            (entry.kind == Log::Kind::Info) ? C_B_GREEN :
+            (entry.kind == Log::Kind::Debug) ? C_B_GREEN : "";
 
     std::string white = (color) ? C_B_WHITE : "";
 
-    std::string kind = (entry.kind == Log::Kind::Error) ? "Error" :
+    std::string kind = (entry.kind == Log::Kind::Fatal) ? "Fatal" :
+            (entry.kind == Log::Kind::Critical) ? "Critical" :
+            (entry.kind == Log::Kind::Error) ? "Error" :
             (entry.kind == Log::Kind::Warning) ? "Warning" :
-            (entry.kind == Log::Kind::Info) ? "Info" : "";
+            (entry.kind == Log::Kind::User) ? "User" :
+            (entry.kind == Log::Kind::Info) ? "Info" :
+            (entry.kind == Log::Kind::Debug) ? "Debug" : "";
 
     stream << c_b_color << "[" << white << entry.context.category << c_b_color << " " << kind << "] ";
 }
