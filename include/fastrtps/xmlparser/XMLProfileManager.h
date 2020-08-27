@@ -220,6 +220,10 @@ public:
         participant_profiles_.clear();
         publisher_profiles_.clear();
         subscriber_profiles_.clear();
+        requester_profiles_.clear();
+        replier_profiles_.clear();
+        topic_profiles_.clear();
+        transport_profiles_.clear();
         xml_files_.clear();
         transport_profiles_.clear();
     }
