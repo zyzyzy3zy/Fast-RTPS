@@ -41,7 +41,7 @@ RTPSWriter::RTPSWriter(
     , mp_history(hist)
     , mp_listener(listen)
     , is_async_(att.mode == SYNCHRONOUS_WRITER ? false : true)
-    , m_separateSendingEnabled(false)
+    , m_separateSendingEnabled(!guid.is_builtin())
     , locator_selector_(att.matched_readers_allocation)
     , all_remote_readers_(att.matched_readers_allocation)
     , all_remote_participants_(att.matched_readers_allocation)

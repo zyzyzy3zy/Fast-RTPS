@@ -598,6 +598,11 @@ void StatefulWriter::send_changes_separatedly(
 
     for (ReaderProxy* remoteReader : matched_readers_)
     {
+        if (!remoteReader->has_changes())
+        {
+            std::cout << "There were no changes for: " << remoteReader->guid() << std::endl;
+            continue;
+        }
         if (remoteReader->is_local_reader())
         {
             SequenceNumber_t max_ack_seq = SequenceNumber_t::unknown();
@@ -645,7 +650,7 @@ void StatefulWriter::send_changes_separatedly(
                     send_heartbeat_nts_(1u, group, true);
                 }
 
-                RTPSGapBuilder gaps(group);
+                RTPSGapBuilder gaps(group, remoteReader->guid());
 
                 uint32_t lastBytesProcessed = 0;
                 auto sent_fun = [this, remoteReader, &lastBytesProcessed, &group](
@@ -658,7 +663,7 @@ void StatefulWriter::send_changes_separatedly(
                 auto unsent_change_process =
                         [&](const SequenceNumber_t& seqNum, const ChangeForReader_t* unsentChange)
                         {
-                            if (unsentChange != nullptr && unsentChange->isRelevant() && unsentChange->isValid())
+                            if (unsentChange != nullptr && unsentChange->isValid())
                             {
                                 bool sent_ok = send_data_or_fragments(
                                     group,
@@ -675,6 +680,7 @@ void StatefulWriter::send_changes_separatedly(
                             {
                                 if (seqNum >= min_history_seq)
                                 {
+                                    std::cout << "Adding to GAP: " << seqNum << std::endl;
                                     gaps.add(seqNum);
                                 }
                                 remoteReader->set_change_to_status(seqNum, UNDERWAY, true);
@@ -1742,7 +1748,7 @@ bool StatefulWriter::send_periodic_heartbeat(
     {
         for (ReaderProxy* it : matched_readers_)
         {
-            if (it->has_unacknowledged() && !it->is_local_reader())
+            if (liveliness || (it->has_changes() && !it->is_local_reader()))
             {
                 send_heartbeat_to_nts(*it, liveliness);
                 unacked_changes = true;
@@ -1813,7 +1819,7 @@ void StatefulWriter::send_heartbeat_to_nts(
         ReaderProxy& remoteReaderProxy,
         bool liveliness)
 {
-    if (remoteReaderProxy.is_remote_and_reliable())
+    if (remoteReaderProxy.is_remote_and_reliable() && (liveliness || remoteReaderProxy.has_changes()))
     {
         try
         {

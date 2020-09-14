@@ -211,11 +211,6 @@ void ReaderProxy::add_change(
     // Irrelevant changes are not added to the collection
     if (!change.isRelevant())
     {
-        if (changes_for_reader_.empty())
-        {
-            changes_low_mark_ = change.getSequenceNumber();
-        }
-
         return;
     }
 
@@ -586,6 +581,25 @@ bool ReaderProxy::process_nack_frag(
 
     return false;
 }
+
+bool ReaderProxy::rtps_is_relevant(
+            CacheChange_t* change)
+    {
+        if (guid().is_builtin()) return true;
+
+        bool relevant = change->sequenceNumber.to64long() % 2;
+        if (guid().entityId.value[2] % 2) relevant = !relevant;
+        if (relevant)
+        {
+            std::cout << "Relevant for " << guid() << ": " << change->sequenceNumber.to64long() << std::endl;
+            return true;
+        }
+        else
+        {
+            std::cout << "NOT relevant for " << guid() << ": " << change->sequenceNumber.to64long() << std::endl;
+            return false;
+        }
+    }
 
 static bool change_less_than_sequence(
         const ChangeForReader_t& change,

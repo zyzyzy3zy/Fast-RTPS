@@ -71,7 +71,12 @@ bool HelloWorldPublisher::init()
     }
 
     // CREATE THE WRITER
-    writer_ = publisher_->create_datawriter(topic_, DATAWRITER_QOS_DEFAULT, &listener_);
+    DataWriterQos wqos;
+    wqos.publish_mode().kind = ASYNCHRONOUS_PUBLISH_MODE;
+    wqos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    wqos.history().kind = KEEP_ALL_HISTORY_QOS;
+    wqos.durability().kind = VOLATILE_DURABILITY_QOS;
+    writer_ = publisher_->create_datawriter(topic_, wqos, &listener_);
 
     if (writer_ == nullptr)
     {
@@ -146,7 +151,7 @@ void HelloWorldPublisher::runThread(
             else
             {
                 std::cout << "Message: " << hello_.message() << " with index: " << hello_.index()
-                          << " SENT" << std::endl;
+                          << " SENT" << std::endl << std::endl;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         }

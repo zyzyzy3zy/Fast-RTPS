@@ -73,9 +73,19 @@ bool HelloWorldSubscriber::init()
     // CREATE THE READER
     DataReaderQos rqos = DATAREADER_QOS_DEFAULT;
     rqos.reliability().kind = RELIABLE_RELIABILITY_QOS;
+    rqos.history().kind = KEEP_ALL_HISTORY_QOS;
+    rqos.durability().kind = VOLATILE_DURABILITY_QOS;
     reader_ = subscriber_->create_datareader(topic_, rqos, &listener_);
 
     if (reader_ == nullptr)
+    {
+        return false;
+    }
+
+    // CREATE THE READER 2
+    reader_2_ = subscriber_->create_datareader(topic_, rqos, &listener_);
+
+    if (reader_2_ == nullptr)
     {
         return false;
     }
@@ -131,7 +141,8 @@ void HelloWorldSubscriber::SubListener::on_data_available(
         {
             samples_++;
             // Print your structure data here.
-            std::cout << "Message " << hello_.message() << " " << hello_.index() << " RECEIVED" << std::endl;
+            std::cout << reader->guid() << " Message " << hello_.message() << " " << hello_.index() << " RECEIVED"
+                    << std::endl;
         }
     }
 }

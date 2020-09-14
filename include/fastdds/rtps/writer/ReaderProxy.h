@@ -37,6 +37,8 @@
 #include <fastdds/rtps/attributes/RTPSParticipantAllocationAttributes.hpp>
 #include <fastrtps/utils/collections/ResourceLimitedVector.hpp>
 
+#include <fastrtps/utils/System.h>
+
 namespace eprosima {
 namespace fastrtps {
 namespace rtps {
@@ -349,11 +351,8 @@ public:
      * @param change
      * @return true if the change is relevant, false otherwise.
      */
-    inline bool rtps_is_relevant(
-            CacheChange_t* change)
-    {
-        (void)change; return true;
-    }
+    bool rtps_is_relevant(
+            CacheChange_t* change);
 
     /**
      * Get the highest fully acknowledged sequence number.
