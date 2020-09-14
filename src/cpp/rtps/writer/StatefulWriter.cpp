@@ -644,10 +644,9 @@ void StatefulWriter::send_changes_separatedly(
             SequenceNumber_t min_history_seq = get_seq_num_min();
             if (remoteReader->is_reliable())
             {
-                if (remoteReader->are_there_gaps())
-                {
-                    send_heartbeat_nts_(1u, group, false);
-                }
+                // Add a HEARTBEAT to the datagram with final flag set to false. This way, the reader must send an
+                // ACKNACK message for each DATA that it receives.
+                send_heartbeat_nts_(1u, group, false);
 
                 RTPSGapBuilder gaps(group, remoteReader->guid());
 
