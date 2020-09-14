@@ -108,8 +108,8 @@ void HelloWorldPublisher::PubListener::on_publication_matched(
 {
     if (info.current_count_change == 1)
     {
-        matched_ = info.total_count;
         firstConnected_ = true;
+        matched_ = info.total_count;
         std::cout << "Publisher matched." << std::endl;
     }
     else if (info.current_count_change == -1)
@@ -132,18 +132,19 @@ void HelloWorldPublisher::runThread(
     {
         while (!stop_)
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
             if (publish(false))
             {
                 std::cout << "Message: " << hello_.message() << " with index: " << hello_.index()
                           << " SENT" << std::endl;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         }
     }
     else
     {
         for (uint32_t i = 0; i < samples; ++i)
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
             if (!publish())
             {
                 --i;
@@ -153,7 +154,6 @@ void HelloWorldPublisher::runThread(
                 std::cout << "Message: " << hello_.message() << " with index: " << hello_.index()
                           << " SENT" << std::endl << std::endl;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
         }
     }
 }
@@ -180,7 +180,7 @@ void HelloWorldPublisher::run(
 bool HelloWorldPublisher::publish(
         bool waitForListener)
 {
-    if (listener_.firstConnected_ || !waitForListener || listener_.matched_ > 0)
+    if (!waitForListener || listener_.matched_ >= 2)
     {
         hello_.index(hello_.index() + 1);
         writer_->write(&hello_);

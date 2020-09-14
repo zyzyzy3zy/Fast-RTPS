@@ -600,7 +600,6 @@ void StatefulWriter::send_changes_separatedly(
     {
         if (!remoteReader->has_changes())
         {
-            std::cout << "There were no changes for: " << remoteReader->guid() << std::endl;
             continue;
         }
         if (remoteReader->is_local_reader())
@@ -647,7 +646,7 @@ void StatefulWriter::send_changes_separatedly(
             {
                 if (remoteReader->are_there_gaps())
                 {
-                    send_heartbeat_nts_(1u, group, true);
+                    send_heartbeat_nts_(1u, group, false);
                 }
 
                 RTPSGapBuilder gaps(group, remoteReader->guid());
@@ -680,7 +679,6 @@ void StatefulWriter::send_changes_separatedly(
                             {
                                 if (seqNum >= min_history_seq)
                                 {
-                                    std::cout << "Adding to GAP: " << seqNum << std::endl;
                                     gaps.add(seqNum);
                                 }
                                 remoteReader->set_change_to_status(seqNum, UNDERWAY, true);

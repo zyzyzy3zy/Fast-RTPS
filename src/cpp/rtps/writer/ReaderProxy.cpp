@@ -591,12 +591,10 @@ bool ReaderProxy::rtps_is_relevant(
         if (guid().entityId.value[2] % 2) relevant = !relevant;
         if (relevant)
         {
-            std::cout << "Relevant for " << guid() << ": " << change->sequenceNumber.to64long() << std::endl;
             return true;
         }
         else
         {
-            std::cout << "NOT relevant for " << guid() << ": " << change->sequenceNumber.to64long() << std::endl;
             return false;
         }
     }
