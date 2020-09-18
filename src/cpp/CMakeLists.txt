@@ -163,6 +163,7 @@ set(${PROJECT_NAME}_source_files
     rtps/builtin/discovery/endpoint/EDPSimple.cpp
     rtps/builtin/discovery/endpoint/EDPSimpleListeners.cpp
     rtps/builtin/discovery/endpoint/EDPStatic.cpp
+    rtps/builtin/discovery/DiscoveryDataBase.cpp
     rtps/builtin/liveliness/WLP.cpp
     rtps/builtin/liveliness/WLPListener.cpp
     rtps/builtin/data/ParticipantProxyData.cpp
