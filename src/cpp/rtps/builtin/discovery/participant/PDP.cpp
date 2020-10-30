@@ -19,6 +19,8 @@
 
 #include <fastdds/rtps/builtin/discovery/participant/PDP.h>
 #include <fastdds/rtps/builtin/discovery/participant/PDPListener.h>
+#include <fastdds/rtps/builtin/discovery/participant/PDPClient.h>
+#include <fastdds/rtps/builtin/discovery/participant/PDPSimple.h>
 
 #include <fastdds/rtps/builtin/BuiltinProtocols.h>
 #include <fastdds/rtps/builtin/liveliness/WLP.h>
@@ -263,7 +265,8 @@ void PDP::initializeParticipantProxyData(
     {
         GuidPrefix_t persistent = mp_RTPSParticipant->getAttributes().prefix;
 
-        if (persistent != c_GuidPrefix_Unknown)
+        if (persistent != c_GuidPrefix_Unknown
+                && nullptr == dynamic_cast<PDPClient*>(this) && nullptr == dynamic_cast<PDPSimple*>(this))
         {
             participant_data->set_persistence_guid(
                 GUID_t(
