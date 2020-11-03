@@ -723,6 +723,7 @@ bool PDPServer2::server_update_routine()
     {
         logInfo(RTPS_PDP_SERVER, "");
         logInfo(RTPS_PDP_SERVER, "-------------------- Server routine start --------------------");
+        logInfo(RTPS_PDP_SERVER, "-------------------- " << mp_RTPSParticipant->getGuid() << " --------------------");
 
         process_writers_acknowledgements();     // server + ddb(functor_with_ddb)
         process_data_queues();                  // all ddb
@@ -732,6 +733,7 @@ bool PDPServer2::server_update_routine()
         process_to_send_lists();                // server + ddb(get_to_send, remove_to_send_this)
         pending_work = pending_ack();           // all server
 
+        logInfo(RTPS_PDP_SERVER, "-------------------- " << mp_RTPSParticipant->getGuid() << " --------------------");
         logInfo(RTPS_PDP_SERVER, "-------------------- Server routine end --------------------");
         logInfo(RTPS_PDP_SERVER, "");
 
@@ -860,6 +862,7 @@ bool PDPServer2::process_disposals()
     // Iterate over disposals
     for (auto change: disposals)
     {
+        logInfo(RTPS_PDP_SERVER, "Process disposal change from: " << change->instanceHandle);
         // No check is performed on whether the change is an actual disposal, leaving the responsability of correctly
         // populating the disposals list to discovery_db_.process_data_queue().
 
@@ -919,7 +922,7 @@ bool PDPServer2::process_disposals()
         }
         else
         {
-            logError(RTPS_PDP_SERVER, "Wrong DATA received from disposals" << change->instanceHandle);
+            logError(RTPS_PDP_SERVER, "Wrong DATA received from disposals " << change->instanceHandle);
         }
     }
     // Clear database disposals list
