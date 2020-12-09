@@ -136,7 +136,7 @@ else()
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra -Wno-unknown-pragmas -Wno-error=deprecated-declarations")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined -fstack-check -fsanitize=bounds-strict -fstack-protector")
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,error")
     endif()
@@ -259,7 +259,7 @@ option(SQLITE3_SUPPORT "Activate SQLITE3 support" ON)
 ###############################################################################
 # SHM as Default transport
 ###############################################################################
-option(SHM_TRANSPORT_DEFAULT "Adds SHM transport to the default transports" ON)
+option(SHM_TRANSPORT_DEFAULT "Adds SHM transport to the default transports" OFF)
 
 
 ###############################################################################

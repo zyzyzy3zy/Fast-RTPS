@@ -603,6 +603,13 @@ bool AESGCMGMAC_Transform::decode_rtps_message(
         const ParticipantCryptoHandle& sending_crypto,
         SecurityException& /*exception*/)
 {
+    uint8_t* original_pointer = encoded_buffer.buffer;
+    uint32_t original_pos = encoded_buffer.pos;
+    uint32_t size = std::min(encoded_buffer.length, uint32_t(50));
+    uint8_t original_id = original_pointer[original_pos];
+    uint8_t original_buffer[50];
+    memcpy(original_buffer, &original_pointer[original_pos], size);
+
     const AESGCMGMAC_ParticipantCryptoHandle& sending_participant = AESGCMGMAC_ParticipantCryptoHandle::narrow(
         sending_crypto);
 
@@ -646,7 +653,26 @@ bool AESGCMGMAC_Transform::decode_rtps_message(
 
         if (id != SRTPS_PREFIX)
         {
-            logError(SECURITY_CRYPTO, "Not valid SecureDataHeader submessage id");
+            uint8_t current_id = encoded_buffer.buffer[encoded_buffer.pos];
+            logError(SECURITY_CRYPTO, "Not valid SecureDataHeader submessage id: " << static_cast<int>(id) << " - " << static_cast<int>(current_id));
+            if (original_id != current_id)
+            {
+                std::stringstream oss;
+                oss << "P - " << static_cast<void*>(original_pointer) << "\n" << "S - " << original_pos << "\n";
+                for (uint32_t i = 0; i < size; ++i)
+                {
+                    oss << std::hex << static_cast<int>(original_buffer[i]) << " ";
+                }
+                std::stringstream css;
+                css << "P - " << static_cast<void*>(encoded_buffer.buffer) << "\n" << "S - " << encoded_buffer.pos << "\n";
+                for (uint32_t i = 0; i < size; ++i)
+                {
+                    css << std::hex << static_cast<int>(encoded_buffer.buffer[encoded_buffer.pos+i]) << " ";
+                }
+                logError(SECURITY_CRYPTO, "Original: " << oss.str());
+                logError(SECURITY_CRYPTO, "Current: " << css.str());
+
+            }
             return false;
         }
 
