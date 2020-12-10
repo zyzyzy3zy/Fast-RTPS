@@ -603,13 +603,6 @@ bool AESGCMGMAC_Transform::decode_rtps_message(
         const ParticipantCryptoHandle& sending_crypto,
         SecurityException& /*exception*/)
 {
-    uint8_t* original_pointer = encoded_buffer.buffer;
-    uint32_t original_pos = encoded_buffer.pos;
-    uint32_t size = std::min(encoded_buffer.length, uint32_t(50));
-    uint8_t original_id = original_pointer[original_pos];
-    uint8_t original_buffer[50];
-    memcpy(original_buffer, &original_pointer[original_pos], size);
-
     const AESGCMGMAC_ParticipantCryptoHandle& sending_participant = AESGCMGMAC_ParticipantCryptoHandle::narrow(
         sending_crypto);
 
@@ -637,8 +630,41 @@ bool AESGCMGMAC_Transform::decode_rtps_message(
         return false;
     }
 
+    uint8_t* original_pointer = encoded_buffer.buffer;
+    uint32_t original_pos = encoded_buffer.pos;
+    uint32_t original_size = std::min(encoded_buffer.length, uint32_t(50));
+    uint8_t original_id = original_pointer[original_pos];
+    uint8_t original_buffer[50];
+    memcpy(original_buffer, &original_pointer[original_pos], original_size);
+
+    std::stringstream oss;
+    oss << "Buffer: " << static_cast<void*>(original_pointer) << "\n"
+        << "Pos: " << original_pos << "\n"
+        << "SRTPS_PREFIX: " << std::hex << static_cast<int>(original_id) << "\n";
+    for (uint32_t i = 0; i < encoded_buffer.length; ++i)
+    {
+        oss << std::hex << static_cast<int>(encoded_buffer.buffer[encoded_buffer.pos+i]) << " ";
+    }
+
+    uint8_t* current_pointer = encoded_buffer.buffer;
+    uint32_t current_pos = encoded_buffer.pos;
+    uint32_t current_size = std::min(encoded_buffer.length, uint32_t(50));
+    uint8_t current_id = current_pointer[current_pos];
+    uint8_t current_buffer[50];
+    memcpy(current_buffer, &current_pointer[current_pos], current_size);
+
+    std::stringstream css;
+    css << "Buffer: " << static_cast<void*>(current_pointer) << "\n"
+        << "Pos: " << current_pos << "\n"
+        << "SRTPS_PREFIX: " << std::hex << static_cast<int>(current_id) << "\n";
+    for (uint32_t i = 0; i < encoded_buffer.length; ++i)
+    {
+        css << std::hex << static_cast<int>(encoded_buffer.buffer[encoded_buffer.pos+i]) << " ";
+    }
+
     eprosima::fastcdr::FastBuffer input_buffer((char*)&encoded_buffer.buffer[encoded_buffer.pos],
             encoded_buffer.length - encoded_buffer.pos);
+
     eprosima::fastcdr::Cdr decoder(input_buffer);
 
     SecureDataHeader header;
@@ -653,25 +679,17 @@ bool AESGCMGMAC_Transform::decode_rtps_message(
 
         if (id != SRTPS_PREFIX)
         {
-            uint8_t current_id = encoded_buffer.buffer[encoded_buffer.pos];
-            logError(SECURITY_CRYPTO, "Not valid SecureDataHeader submessage id: " << static_cast<int>(id) << " - " << static_cast<int>(current_id));
+            logError(SECURITY_CRYPTO, "Not valid SecureDataHeader submessage SecureRTPSPrefixSubMsg: " << static_cast<int>(id) << " - " << static_cast<int>(current_id));
             if (original_id != current_id)
             {
-                std::stringstream oss;
-                oss << "P - " << static_cast<void*>(original_pointer) << "\n" << "S - " << original_pos << "\n";
-                for (uint32_t i = 0; i < size; ++i)
-                {
-                    oss << std::hex << static_cast<int>(original_buffer[i]) << " ";
-                }
-                std::stringstream css;
-                css << "P - " << static_cast<void*>(encoded_buffer.buffer) << "\n" << "S - " << encoded_buffer.pos << "\n";
-                for (uint32_t i = 0; i < size; ++i)
-                {
-                    css << std::hex << static_cast<int>(encoded_buffer.buffer[encoded_buffer.pos+i]) << " ";
-                }
-                logError(SECURITY_CRYPTO, "Original: " << oss.str());
-                logError(SECURITY_CRYPTO, "Current: " << css.str());
-
+                logError(SECURITY_CRYPTO,
+                    "Original: ........................................ \n"
+                    << oss.str() << "\n"
+                    << "..................................................................................................");
+                logError(SECURITY_CRYPTO,
+                    "Current: ......................................... \n"
+                    << css.str() << "\n"
+                    << "..................................................................................................");
             }
             return false;
         }

@@ -94,9 +94,10 @@ void ReceiverResource::OnDataReceived(const octet * data, const uint32_t size,
 
     if (rcv != nullptr)
     {
-        CDRMessage_t msg(0);
+        CDRMessage_t msg(size);
         msg.wraps = true;
-        msg.buffer = const_cast<octet*>(data);
+        // msg.buffer = const_cast<octet*>(data);
+        memcpy(msg.buffer, data, size);
         msg.length = size;
         msg.max_size = size;
         msg.reserved_size = size;
