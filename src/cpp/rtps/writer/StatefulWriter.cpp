@@ -133,6 +133,7 @@ StatefulWriter::StatefulWriter(
     , currentUsageSendBufferSize_(static_cast<int32_t>(pimpl->get_min_network_send_buffer_size()))
     , m_controllers()
 {
+    logError(RTPS_WRITER, "Stateful Writer created");
     init(pimpl, att);
 }
 
@@ -164,6 +165,7 @@ StatefulWriter::StatefulWriter(
     , currentUsageSendBufferSize_(static_cast<int32_t>(pimpl->get_min_network_send_buffer_size()))
     , m_controllers()
 {
+    logError(RTPS_WRITER, "Stateful Writer created");
     init(pimpl, att);
 }
 
@@ -196,6 +198,7 @@ StatefulWriter::StatefulWriter(
     , currentUsageSendBufferSize_(static_cast<int32_t>(pimpl->get_min_network_send_buffer_size()))
     , m_controllers()
 {
+    logError(RTPS_WRITER, "Stateful Writer created");
     init(pimpl, att);
 }
 

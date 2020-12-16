@@ -758,6 +758,7 @@ bool RTPSParticipantImpl::createWriter(
         const EntityId_t& entityId,
         bool isBuiltin)
 {
+    logError(RTPS_WRITER, "createWriter 1");
     auto callback = [hist, listen, this]
                 (const GUID_t& guid, WriterAttributes& param, IPersistenceService* persistence,
                     bool is_reliable) -> RTPSWriter*
@@ -797,6 +798,7 @@ bool RTPSParticipantImpl::createWriter(
         const EntityId_t& entityId,
         bool isBuiltin)
 {
+    logError(RTPS_WRITER, "createWriter 2");
     if (!payload_pool)
     {
         logError(RTPS_PARTICIPANT, "Trying to create writer with null payload pool");

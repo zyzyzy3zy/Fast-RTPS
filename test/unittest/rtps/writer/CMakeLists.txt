@@ -102,5 +102,24 @@ if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER))
         ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
     add_gtest(RTPSWriterTests SOURCES ${RTPSWRITERTESTS_SOURCE})
 
+    # StatefulWriterTests
+
+    set(STATEFULWRITER_SOURCE StatefulWriterTests.cpp)
+
+    add_executable(StatefulWriterTests ${STATEFULWRITER_SOURCE})
+    target_compile_definitions(StatefulWriterTests PRIVATE FASTRTPS_NO_LIB)
+    target_include_directories(StatefulWriterTests PRIVATE
+        ${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS}
+        ${PROJECT_SOURCE_DIR}/src/cpp/rtps/writer
+        ${PROJECT_SOURCE_DIR}/test/mock/rtps/RTPSParticipant
+        ${PROJECT_SOURCE_DIR}/test/mock/rtps/WriterHistory
+        ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include
+        ${PROJECT_SOURCE_DIR}/src/cpp
+        )
+    target_link_libraries(StatefulWriterTests foonathan_memory
+        ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+    add_gtest(StatefulWriterTests SOURCES ${STATEFULWRITER_SOURCE})
+
     endif()
 endif()

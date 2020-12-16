@@ -90,6 +90,7 @@ StatelessWriter::StatelessWriter(
     , unsent_changes_(resource_limits_from_history(history->m_att))
     , last_intraprocess_sequence_number_(0)
 {
+    logError(RTPS_WRITER, "Stateless Writer created");
     init(impl, attributes);
 }
 
@@ -106,6 +107,7 @@ StatelessWriter::StatelessWriter(
     , unsent_changes_(resource_limits_from_history(history->m_att))
     , last_intraprocess_sequence_number_(0)
 {
+    logError(RTPS_WRITER, "Stateless Writer created");
     init(impl, attributes);
 }
 
@@ -123,6 +125,7 @@ StatelessWriter::StatelessWriter(
     , unsent_changes_(resource_limits_from_history(history->m_att))
     , last_intraprocess_sequence_number_(0)
 {
+    logError(RTPS_WRITER, "Stateless Writer created");
     init(participant, attributes);
 }
 
