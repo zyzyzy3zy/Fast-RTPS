@@ -852,6 +852,7 @@ bool StatefulReader::change_received(
                         {
                             // Change was added to the history. May need to update datasharing ACK timestamp
                             // because we can receive changes in a different order (due to processing of writers or late-joiners)
+                            logError(RTPS_READER, "Change " << a_change->sequenceNumber << " received with timestamp " << a_change->sourceTimestamp.to_ns());
                             datasharing_listener_->change_added_with_timestamp(a_change->sourceTimestamp.to_ns());
                         }
 
@@ -898,6 +899,7 @@ bool StatefulReader::change_received(
         {
             // Change was added to the history. May need to update datasharing ACK timestamp
             // because we can receive changes in a different order (due to processing of writers or late-joiners)
+            logError(RTPS_READER, "Change " << a_change->sequenceNumber << " received with timestamp " << a_change->sourceTimestamp.to_ns());
             datasharing_listener_->change_added_with_timestamp(a_change->sourceTimestamp.to_ns());
         }
 
@@ -1262,6 +1264,7 @@ void StatefulReader::change_read_by_user(
                 // First update the last ACK timestamp in the shared memory
                 if (!first_not_read_found)
                 {
+                    logError(RTPS_READER, "Change " << change->sequenceNumber << " processed with timestamp " << change->sourceTimestamp.to_ns());
                     datasharing_listener_->change_removed_with_timestamp((*it)->sourceTimestamp.to_ns());
                     first_not_read_found = true;
                 }
@@ -1287,6 +1290,7 @@ void StatefulReader::change_read_by_user(
         // Must ACK all in the writer
         if (!first_not_read_found)
         {
+            logError(RTPS_READER, "Change " << change->sequenceNumber << " processed with timestamp " << change->sourceTimestamp.to_ns() << " (empty hist)");
             datasharing_listener_->change_removed_with_timestamp(
                 (*mp_history->changesRbegin())->sourceTimestamp.to_ns() + 1);
         }

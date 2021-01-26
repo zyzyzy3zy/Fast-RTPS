@@ -264,6 +264,7 @@ void DataSharingListener::change_removed_with_timestamp(
     // then, the reader's lock is protecting the concurrency on the value updates.
     if (timestamp > notification_->notification_->ack_timestamp)
     {
+        logError(RTPS_READER, "Timestamp updated to  " << timestamp);
         notification_->notification_->ack_timestamp = timestamp;
         for (auto it = writer_pools_.begin(); it != writer_pools_.end(); ++it)
         {
@@ -280,6 +281,7 @@ void DataSharingListener::change_added_with_timestamp(
     // then, the reader's lock is protecting the concurrency on the value updates.
     if (timestamp < notification_->notification_->ack_timestamp)
     {
+        logError(RTPS_READER, "Timestamp updated to  " << timestamp);
         notification_->notification_->ack_timestamp = timestamp;
     }
 }
