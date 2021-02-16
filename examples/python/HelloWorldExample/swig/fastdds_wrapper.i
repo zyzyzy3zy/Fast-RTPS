@@ -40,6 +40,8 @@ public:
 
     void init();
     void destroy();
+    bool wait_for_sample(
+        uint32_t seconds);
     bool take_sample(
             type& msg);
 };

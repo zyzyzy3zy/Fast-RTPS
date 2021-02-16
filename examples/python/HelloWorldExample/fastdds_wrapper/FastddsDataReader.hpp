@@ -58,6 +58,12 @@ public:
         destroy();
     }
 
+    bool wait_for_sample(uint32_t seconds)
+    {
+        eprosima::fastrtps::Duration_t timeout(seconds, 0);
+        return datareader_->wait_for_unread_message(timeout);
+    }
+
     void init()
     {
         participant_ = eprosima::fastdds::dds::DomainParticipantFactory::get_instance()->create_participant(
