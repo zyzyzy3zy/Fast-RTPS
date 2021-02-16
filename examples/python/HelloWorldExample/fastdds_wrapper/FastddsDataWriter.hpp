@@ -51,12 +51,22 @@ public:
         , type_(new CustomTopicDataType())
         , did_(did)
     {
+        init();
     }
 
     ~FastddsDataWriter()
     {
         destroy();
     }
+
+
+    bool write_sample(
+            type& msg)
+    {
+        return datawriter_->write((void*)&msg);
+    }
+
+private:
 
     void init()
     {
@@ -123,15 +133,6 @@ public:
             participant_ = nullptr;
         }
     }
-
-    bool write_sample(
-            type& msg)
-    {
-        return datawriter_->write((void*)&msg);
-    }
-
-
-private:
 
     FastddsDataWriter(
             const FastddsDataWriter&) = delete;

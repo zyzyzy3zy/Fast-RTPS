@@ -51,6 +51,7 @@ public:
         , type_(new CustomTopicDataType())
         , did_(did)
     {
+        init();
     }
 
     ~FastddsDataReader()
@@ -58,11 +59,30 @@ public:
         destroy();
     }
 
+    bool take_sample(
+            type& msg)
+    {
+        eprosima::fastdds::dds::SampleInfo info;
+        if (datareader_->take_next_sample(&msg, &info) == ReturnCode_t::RETCODE_OK)
+        {
+            if (info.instance_state == eprosima::fastdds::dds::ALIVE_INSTANCE_STATE)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     bool wait_for_sample(uint32_t seconds)
     {
         eprosima::fastrtps::Duration_t timeout(seconds, 0);
         return datareader_->wait_for_unread_message(timeout);
     }
+
+
+private:
+
 
     void init()
     {
@@ -127,24 +147,6 @@ public:
             participant_ = nullptr;
         }
     }
-
-    bool take_sample(
-            type& msg)
-    {
-        eprosima::fastdds::dds::SampleInfo info;
-        if (datareader_->take_next_sample(&msg, &info) == ReturnCode_t::RETCODE_OK)
-        {
-            if (info.instance_state == eprosima::fastdds::dds::ALIVE_INSTANCE_STATE)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-
-private:
 
     FastddsDataReader(
             const FastddsDataReader&) = delete;

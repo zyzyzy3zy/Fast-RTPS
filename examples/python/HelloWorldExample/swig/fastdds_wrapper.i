@@ -21,8 +21,6 @@ public:
         const std::string& topic_name);
     ~FastddsDataWriter();
 
-    void init();
-    void destroy();
     bool write_sample(
             type& msg);
 };
@@ -38,8 +36,6 @@ public:
         const std::string& topic_name);
     ~FastddsDataReader();
 
-    void init();
-    void destroy();
     bool wait_for_sample(
         uint32_t seconds);
     bool take_sample(
