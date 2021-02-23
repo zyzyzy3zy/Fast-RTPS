@@ -360,7 +360,7 @@ inline std::ostream& operator <<(
     std::string nano_st = std::to_string(t.nanosec());
     nano_st.insert(0, 9 - nano_st.length(), '0');
 
-    while(nano_st.length() > 1 && nano_st.at(nano_st.length() - 1) == '0')
+    while (nano_st.length() > 1 && nano_st.at(nano_st.length() - 1) == '0')
     {
         nano_st.pop_back();
     }
@@ -401,7 +401,7 @@ inline std::istream& operator >>(
             }
 
             // manual power operation
-            for (int i=nano_st.length(); i<9; i++)
+            for (int i = nano_st.length(); i < 9; i++)
             {
                 nano *= 10;
             }

@@ -19,7 +19,8 @@
 
 #include <chrono>
 
-namespace { // unnamed namespace for inline functions in compilation unit. Better practice than static inline.
+namespace {
+// unnamed namespace for inline functions in compilation unit. Better practice than static inline.
 
 constexpr uint64_t C_FRACTIONS_PER_SEC = 4294967296ULL;
 constexpr uint64_t C_NANOSECONDS_PER_SEC = 1000000000ULL;
