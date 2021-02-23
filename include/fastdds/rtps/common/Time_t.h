@@ -22,7 +22,6 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
-#include <iomanip>
 
 // defines to avoid the "static initialization order fiasco"
 #define TIME_T_INFINITE_SECONDS 0x7fffffff
