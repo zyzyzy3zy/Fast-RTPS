@@ -406,7 +406,7 @@ elseif(NOT EPROSIMA_INSTALLER)
         # C4715: 'Test': not all control paths return a value
         # C5038 data member 'member1' will be initialized after data member 'member2'
         target_compile_options(${PROJECT_NAME} PUBLIC /w34101 /w34555 /w34189 /w35038 /w34715)
-    endif(MSVC)
+    endif()
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         ${PROJECT_NAME_UPPER}_SOURCE
@@ -497,6 +497,8 @@ elseif(NOT EPROSIMA_INSTALLER)
                 set(MSVCARCH_DIR_EXTENSION_EXT "${MSVCARCH_DIR_EXTENSION_EXT}_static")
             endif()
         endif()
+    elseif(BUILD_SHARED_LIBS)
+        target_link_options(${PROJECT_NAME} ${PRIVACY} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libfastrtps.version)
     endif()
 endif()
 
