@@ -14,6 +14,7 @@
 
 include(${PROJECT_SOURCE_DIR}/cmake/dev/set_sources.cmake)
 include(${PROJECT_SOURCE_DIR}/cmake/dev/generate_msvc_libraries.cmake)
+include(CheckCXXSourceCompiles)
 
 # Set source files
 
@@ -498,7 +499,16 @@ elseif(NOT EPROSIMA_INSTALLER)
             endif()
         endif()
     elseif(BUILD_SHARED_LIBS)
-        target_link_options(${PROJECT_NAME} ${PRIVACY} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libfastrtps.version)
+        set(VERSION_SCRIPT_SUPPORT_FLAGS -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libfastrtps.version)
+        set(OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+        set(CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${VERSION_SCRIPT_SUPPORT_FLAGS})
+        CHECK_CXX_SOURCE_COMPILES("int main(int, char**){return 0;}" HAS_VERSION_SCRIPT_SUPPORT)
+        set(CMAKE_REQUIRED_FLAGS ${OLD_CMAKE_REQUIRED_FLAGS})
+        unset(OLD_CMAKE_REQUIRED_FLAGS)
+        if(HAS_VERSION_SCRIPT_SUPPORT)
+            message(STATUS "Using linker version script to select exported symbols")
+            target_link_options(${PROJECT_NAME} ${PRIVACY} ${VERSION_SCRIPT_SUPPORT_FLAGS})
+        endif()
     endif()
 endif()
 
