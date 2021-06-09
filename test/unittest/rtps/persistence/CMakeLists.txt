@@ -15,8 +15,9 @@
 if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER))
     include(${PROJECT_SOURCE_DIR}/cmake/common/gtest.cmake)
     check_gtest()
+    check_gmock()
 
-    if(GTEST_FOUND AND SQLITE3_SUPPORT)
+    if(GTEST_FOUND AND GMOCK_FOUND AND SQLITE3_SUPPORT)
         set(PERSISTENCETESTS_SOURCE
             PersistenceTests.cpp
             ${PROJECT_SOURCE_DIR}/src/cpp/rtps/persistence/PersistenceFactory.cpp
@@ -36,12 +37,14 @@ if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER))
             $<$<BOOL:${INTERNAL_DEBUG}>:__INTERNALDEBUG> # Internal debug activated.
             )
         target_include_directories(PersistenceTests PRIVATE ${GTEST_INCLUDE_DIRS}
+            ${PROJECT_SOURCE_DIR}/test/mock/rtps/WriterHistory
             ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include
             ${PROJECT_SOURCE_DIR}/src/cpp
             )
         target_link_libraries(PersistenceTests
             foonathan_memory
             ${GTEST_LIBRARIES}
+            ${GMOCK_LIBRARIES}
             ${CMAKE_DL_LIBS} 
             )
         if(MSVC OR MSVC_IDE)
