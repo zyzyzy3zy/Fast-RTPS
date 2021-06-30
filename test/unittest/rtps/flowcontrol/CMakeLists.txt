@@ -15,41 +15,41 @@
 if(NOT ((MSVC OR MSVC_IDE) AND EPROSIMA_INSTALLER))
     include(${PROJECT_SOURCE_DIR}/cmake/common/gtest.cmake)
     check_gtest()
+    check_gmock()
 
-    if(GTEST_FOUND)
+    if(GTEST_FOUND AND GMOCK_FOUND)
         if(WIN32)
             add_definitions(-D_WIN32_WINNT=0x0601)
         endif()
 
-        include_directories(${Asio_INCLUDE_DIR})
+        set(FLOWCONTROLLERFACTORYTESTS_SOURCE
+            FlowControllerFactoryTests.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/flowcontrol/FlowControllerFactory.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/flowcontrol/FlowControllerConsts.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/common/Time_t.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/log/Log.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/log/OStreamConsumer.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/fastdds/log/StdoutConsumer.cpp
+            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/attributes/PropertyPolicy.cpp
+            )
 
-        set(THROUGHPUTCONTROLLERTESTS_SOURCE
-            ThroughputControllerTests.cpp
-            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/flowcontrol/FlowController.cpp
-            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/flowcontrol/ThroughputController.cpp
-            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/flowcontrol/ThroughputControllerDescriptor.cpp
-            ${PROJECT_SOURCE_DIR}/src/cpp/rtps/common/Time_t.cpp)
-
-        add_executable(ThroughputControllerTests ${THROUGHPUTCONTROLLERTESTS_SOURCE})
-        target_compile_definitions(ThroughputControllerTests PRIVATE FASTRTPS_NO_LIB
+        add_executable(FlowControllerFactoryTests ${FLOWCONTROLLERFACTORYTESTS_SOURCE})
+        target_compile_definitions(FlowControllerFactoryTests PRIVATE FASTRTPS_NO_LIB
             $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<STREQUAL:"${CMAKE_BUILD_TYPE}","Debug">>:__DEBUG>
             $<$<BOOL:${INTERNAL_DEBUG}>:__INTERNALDEBUG> # Internal debug activated.
             )
-        target_include_directories(ThroughputControllerTests PRIVATE ${GTEST_INCLUDE_DIRS}
-            ${PROJECT_SOURCE_DIR}/test/mock/rtps/Endpoint
-            ${PROJECT_SOURCE_DIR}/test/mock/rtps/AsyncWriterThread
-            ${PROJECT_SOURCE_DIR}/test/mock/rtps/RTPSParticipantImpl
+        target_include_directories(FlowControllerFactoryTests PRIVATE ${GTEST_INCLUDE_DIRS}
             ${PROJECT_SOURCE_DIR}/test/mock/rtps/RTPSWriter
-            ${PROJECT_SOURCE_DIR}/test/mock/rtps/RTPSReader
+            ${PROJECT_SOURCE_DIR}/test/mock/rtps/RTPSMessageGroup
             ${PROJECT_SOURCE_DIR}/include ${PROJECT_BINARY_DIR}/include
             ${PROJECT_SOURCE_DIR}/src/cpp
             )
-        target_link_libraries(ThroughputControllerTests ${GTEST_LIBRARIES} ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES})
+        target_link_libraries(FlowControllerFactoryTests ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES})
         if(MSVC OR MSVC_IDE)
-            target_link_libraries(ThroughputControllerTests ${PRIVACY}
+            target_link_libraries(FlowControllerFactoryTests ${PRIVACY}
                 iphlpapi Shlwapi
                 )
         endif()
-        add_gtest(ThroughputControllerTests SOURCES ${THROUGHPUTCONTROLLERTESTS_SOURCE})
+        add_gtest(FlowControllerFactoryTests SOURCES ${FLOWCONTROLLERFACTORYTESTS_SOURCE})
     endif()
 endif()
