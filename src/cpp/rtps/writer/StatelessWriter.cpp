@@ -601,7 +601,7 @@ void StatelessWriter::unsent_changes_reset()
 
 bool StatelessWriter::send(
         CDRMessage_t* message,
-        const RTPSWriter::LocatorSelector& locator_selector,
+        const LocatorSelectorSender& locator_selector,
         std::chrono::steady_clock::time_point& max_blocking_time_point) const
 {
     if (!RTPSWriter::send(message, locator_selector, max_blocking_time_point))
@@ -615,15 +615,15 @@ bool StatelessWriter::send(
                    max_blocking_time_point);
 }
 
-RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
+DeliveryRetCode StatelessWriter::deliver_sample_nts(
         CacheChange_t* cache_change,
         RTPSMessageGroup& group,
-        RTPSWriter::LocatorSelector& locator_selector,
+        LocatorSelectorSender& locator_selector,
         const std::chrono::time_point<std::chrono::steady_clock>& /*TODO max_blocking_time*/)
 {
     size_t num_locators = locator_selector.locator_selector.selected_size() + fixed_locators_.size();
     uint64_t change_sequence_number = cache_change->sequenceNumber.to64long();
-    RTPSWriter::DeliveryRetCode ret_code = RTPSWriter::DeliveryRetCode::DELIVERED;
+    DeliveryRetCode ret_code = DeliveryRetCode::DELIVERED;
 
     if (current_sequence_number_sent_ != change_sequence_number)
     {
@@ -648,7 +648,7 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
             if (0 < n_fragments)
             {
                 for (FragmentNumber_t frag = current_fragment_sent_ + 1;
-                        RTPSWriter::DeliveryRetCode::DELIVERED == ret_code && frag <= n_fragments; ++frag)
+                        DeliveryRetCode::DELIVERED == ret_code && frag <= n_fragments; ++frag)
                 {
                     for (std::unique_ptr<ReaderLocator>& it : matched_remote_readers_)
                     {
@@ -664,11 +664,11 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
                             logError(RTPS_WRITER,
                                     "Error sending fragment (" << cache_change->sequenceNumber << ", " << frag <<
                                     ")");
-                            ret_code = RTPSWriter::DeliveryRetCode::NOT_DELIVERED;
+                            ret_code = DeliveryRetCode::NOT_DELIVERED;
                         }
                     }
 
-                    if (RTPSWriter::DeliveryRetCode::DELIVERED == ret_code)
+                    if (DeliveryRetCode::DELIVERED == ret_code)
                     {
                         current_fragment_sent_ = frag;
                     }
@@ -688,7 +688,7 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
                     else
                     {
                         logError(RTPS_WRITER, "Error sending change " << cache_change->sequenceNumber);
-                        ret_code = RTPSWriter::DeliveryRetCode::NOT_DELIVERED;
+                        ret_code = DeliveryRetCode::NOT_DELIVERED;
                     }
                 }
             }
@@ -700,7 +700,7 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
                 if (0 < n_fragments)
                 {
                     for (FragmentNumber_t frag = current_fragment_sent_ + 1;
-                            RTPSWriter::DeliveryRetCode::DELIVERED == ret_code && frag <= n_fragments; ++frag)
+                            DeliveryRetCode::DELIVERED == ret_code && frag <= n_fragments; ++frag)
                     {
                         if (group.add_data_frag(*cache_change, frag, is_inline_qos_expected_))
                         {
@@ -711,7 +711,7 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
                         {
                             logError(RTPS_WRITER,
                                     "Error sending fragment (" << cache_change->sequenceNumber << ", " << frag << ")");
-                            ret_code = RTPSWriter::DeliveryRetCode::NOT_DELIVERED;
+                            ret_code = DeliveryRetCode::NOT_DELIVERED;
                         }
                     }
                 }
@@ -724,7 +724,7 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
                     else
                     {
                         logError(RTPS_WRITER, "Error sending change " << cache_change->sequenceNumber);
-                        ret_code = RTPSWriter::DeliveryRetCode::NOT_DELIVERED;
+                        ret_code = DeliveryRetCode::NOT_DELIVERED;
                     }
                 }
             }
@@ -738,16 +738,16 @@ RTPSWriter::DeliveryRetCode StatelessWriter::deliver_sample_nts(
     catch (const RTPSMessageGroup::timeout&)
     {
         logError(RTPS_WRITER, "Max blocking time reached");
-        ret_code = RTPSWriter::DeliveryRetCode::NOT_DELIVERED;
+        ret_code = DeliveryRetCode::NOT_DELIVERED;
     }
     catch (const RTPSMessageGroup::limit_exceeded&)
     {
-        ret_code = RTPSWriter::DeliveryRetCode::EXCEEDED_LIMIT;
+        ret_code = DeliveryRetCode::EXCEEDED_LIMIT;
     }
 
     group.change_transmitter(this, &locator_selector);
 
-    if (RTPSWriter::DeliveryRetCode::DELIVERED == ret_code &&
+    if (DeliveryRetCode::DELIVERED == ret_code &&
             change_sequence_number > last_sequence_number_sent_)
     {
         if (nullptr != mp_listener)
