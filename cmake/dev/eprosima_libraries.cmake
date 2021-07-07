@@ -30,7 +30,7 @@ macro(find_eprosima_package package)
                     "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}"
                     "-DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL}"
                     "-DANDROID_TOOLCHAIN=${ANDROID_TOOLCHAIN}"
-                    "-DANDROID_PLATFORM=${ANDROID_PLATFORM}"               
+                    "-DANDROID_PLATFORM=${ANDROID_PLATFORM}"
                     "-DANDROID_STL=${ANDROID_STL}"
                     "-DANDROID_PIE=${ANDROID_PIE}"
                     "-DANDROID_CPP_FEATURES=${ANDROID_CPP_FEATURES}"
@@ -84,7 +84,7 @@ macro(find_eprosima_package package)
                 "CONFIGURE_COMMAND \"${CMAKE_COMMAND}\"\n"
                 "${${package}_CMAKE_ARGS}\n"
                 "DOWNLOAD_COMMAND \"\"\n"
-                "UPDATE_COMMAND cd \"${PROJECT_SOURCE_DIR}\" && git submodule update --recursive --init \"thirdparty/${package}\"\n"
+                "UPDATE_COMMAND cd \"${PROJECT_SOURCE_DIR}\"\n"
                 "SOURCE_DIR \${SOURCE_DIR_}\n"
                 "BINARY_DIR \"${${package}ExternalDir}/build\"\n"
                 ")\n")
@@ -152,17 +152,6 @@ endmacro()
 
 macro(find_eprosima_thirdparty package thirdparty_name)
     if(NOT (EPROSIMA_INSTALLER AND (MSVC OR MSVC_IDE)))
-        if(THIRDPARTY)
-            execute_process(
-                COMMAND git submodule update --recursive --init "thirdparty/${thirdparty_name}"
-                WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-                RESULT_VARIABLE EXECUTE_RESULT
-                )
-
-            if(NOT EXECUTE_RESULT EQUAL 0)
-                message(FATAL_ERROR "Cannot configure Git submodule ${package}")
-            endif()
-        endif()
 
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_SOURCE_DIR}/thirdparty/${thirdparty_name})
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_SOURCE_DIR}/thirdparty/${thirdparty_name}/${thirdparty_name})
